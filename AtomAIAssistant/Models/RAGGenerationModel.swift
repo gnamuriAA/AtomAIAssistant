@@ -32,4 +32,8 @@ final class RAGGenerationModel {
         let urls = AvailableMarkdown.allCases.map { $0.url }
         try await multiPDFEmbeddingPipeline?.processAllPDFs(pdfURLs: urls, onProgress: progress)
     }
+
+    func configureContext(context: ModelContext) {
+        self.modelContext = context
+    }
 }
