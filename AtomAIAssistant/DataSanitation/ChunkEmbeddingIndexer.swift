@@ -10,6 +10,7 @@ import SwiftData
 
 protocol EmbeddingProvider {
     func embed(texts: [String]) async throws -> [[Float]]
+    func embed(text: String) async throws -> [Float]
 }
 
 final class ChunkEmbeddingIndexer {
