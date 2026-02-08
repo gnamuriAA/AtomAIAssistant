@@ -26,7 +26,7 @@ enum EmbeddingTextBuilder {
             guard let text = record.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
             return "\(header) | \(text)"
         case .tableRow:
-            guard let columns = record.columns, let rowValues = record.rowValues, !columns.isEmpty, let formattedTableString = record.formattedTableString else { return nil }
+            guard let columns = record.columns, !columns.isEmpty, let formattedTableString = record.formattedTableString else { return nil }
             return formattedTableString
         case .notice:
             guard let n = record.notice else { return nil }
