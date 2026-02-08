@@ -25,7 +25,8 @@ enum ChunkKind: String, Codable {
     case notice
 }
 
-struct ChunkRecord: Codable, Hashable {
+struct ParsedChunk: Codable, Hashable {
+    let docName: String
     let page: Int
     let headerPath: [String]
     let kind: ChunkKind
@@ -41,6 +42,7 @@ struct ChunkRecord: Codable, Hashable {
     let notice: Notice?
 
     init(
+        docName: String,
         page: Int,
         headerPath: [String],
         kind: ChunkKind,
@@ -50,6 +52,7 @@ struct ChunkRecord: Codable, Hashable {
         rowValues: [String: String]? = nil,
         notice: Notice? = nil
     ) {
+        self.docName = docName
         self.page = page
         self.headerPath = headerPath
         self.kind = kind
@@ -88,4 +91,22 @@ struct HeadingPath {
         }
         levels.append(title.trimmingCharacters(in: .whitespacesAndNewlines))
     }
+}
+
+enum chunkMetaCodec {
+    static func encode(_ chunk: ParsedChunk) -> Data? {
+        let meta = ChunkMeta(tableName: chunk.tableName, columns: chunk.columns, rowValues: chunk.rowValues, notice: chunk.notice)
+        return try? JSONEncoder().encode(meta)
+    }
+
+    static func decode(_ data: Data) -> ChunkMeta? {
+        return try? JSONDecoder().decode(ChunkMeta.self, from: data)
+    }
+}
+
+struct ChunkMeta: Codable, Hashable {
+    let tableName: String?
+    let columns: [String]?
+    let rowValues: [String: String]?
+    let notice: Notice?
 }

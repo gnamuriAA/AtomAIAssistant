@@ -8,14 +8,14 @@
 import Foundation
 
 final class MarkdownToChunks {
-    static func generateChunks(from markdown: String) -> [ChunkRecord] {
+    static func generateChunks(from markdown: String, docName: String) -> [ParsedChunk] {
         let lines = markdown
             .replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\r", with: "\n")
             .components(separatedBy: "\n")
 
         var headingPath = HeadingPath()
-        var out = [ChunkRecord]()
+        var out = [ParsedChunk]()
         
         var paragraphBuffer = [String]()
         var lastHeadingTitleForTableName: String?
@@ -35,7 +35,7 @@ final class MarkdownToChunks {
                 return
             }
 
-            out.append(ChunkRecord(page: currentPage, headerPath: headingPath.levels, kind: .text, text: text))
+            out.append(ParsedChunk(docName: docName, page: currentPage, headerPath: headingPath.levels, kind: .text, text: text))
 
             paragraphBuffer.removeAll()
         }
@@ -98,7 +98,7 @@ final class MarkdownToChunks {
                 for table in tables {
                     for row in table.rows {
                         let rowDict = makeRowDict(columns: table.columns, rows: row)
-                        out.append(ChunkRecord(page: currentPage, headerPath: headingPath.levels, kind: .tableRow, tableName: table.name, columns: table.columns, rowValues: rowDict))
+                        out.append(ParsedChunk(docName: docName, page: currentPage, headerPath: headingPath.levels, kind: .tableRow, tableName: table.name, columns: table.columns, rowValues: rowDict))
                     }
                 }
                 lastHeadingTitleForTableName = nil
@@ -109,7 +109,7 @@ final class MarkdownToChunks {
             // Warnings, Error, Notes
             if let notice = classifyNotice(in: line) {
                 flushParagraphBuffer()
-                out.append(ChunkRecord(page: currentPage, headerPath: headingPath.levels, kind: .notice, notice: notice))
+                out.append(ParsedChunk(docName: docName, page: currentPage, headerPath: headingPath.levels, kind: .notice, notice: notice))
                 i += 1
                 continue
             }

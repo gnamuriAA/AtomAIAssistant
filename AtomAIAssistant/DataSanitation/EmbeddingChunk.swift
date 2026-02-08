@@ -1,0 +1,37 @@
+//
+//  EmbeddingChunk.swift
+//  AtomAIAssistant
+//
+//  Created by Gowtham, Namuru on 08/02/26.
+//
+
+import Foundation
+
+struct EmbeddingChunk: Codable, Hashable {
+    let id: String
+    let page: Int
+    let headerPath: [String]
+    let kind: ChunkKind
+    let text: String
+    
+    let sourceIndex: Int
+}
+
+enum EmbeddingTextBuilder {
+    static func build(from record: ParsedChunk) -> String? {
+        let header = record.headerPath.isEmpty ? "Document" : record.headerPath.joined(separator: " / ")
+        
+        switch record.kind {
+        case .text:
+            guard let text = record.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+            return "\(header) | \(text)"
+        case .tableRow:
+            guard let columns = record.columns, let rowValues = record.rowValues, !columns.isEmpty, let formattedTableString = record.formattedTableString else { return nil }
+            return formattedTableString
+        case .notice:
+            guard let n = record.notice else { return nil }
+            let titlePart = n.title.map { "\($0)" } ?? n.severity.rawValue.capitalized
+            return "\(header) | \(titlePart) (\(n.severity.rawValue)): \(n.message)"
+        }
+    }
+}

@@ -12,24 +12,24 @@ final class MarkdownToChunksTests: XCTestCase {
 
     func test_shouldLoad_withHeadings() throws {
         let markdown = try XCTUnwrap(String.loadMarkdown(from: "sampleWithHeadingAndSubSection"), "Expected to load data from sampleWithHeadingAndSubSection.md file")
-        let chunks = MarkdownToChunks.generateChunks(from: markdown)
+        let chunks = MarkdownToChunks.generateChunks(from: markdown, docName: "sampleWithHeadingAndSubSection")
         
-        let expectedChunks = [ChunkRecord(page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories."], kind: .text, text: "Open Coupa (https://aa.coupahost.com/user/home) and scroll to the bottom of the Home Page to get to the Additional Stores section on the right-hand side of the page.")]
+        let expectedChunks = [ParsedChunk(docName: "sampleWithHeadingAndSubSection", page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories."], kind: .text, text: "Open Coupa (https://aa.coupahost.com/user/home) and scroll to the bottom of the Home Page to get to the Additional Stores section on the right-hand side of the page.")]
 
         XCTAssertEqual(chunks, expectedChunks, "Expected \(expectedChunks), but got \(chunks)")
     }
 
     func test_shouldLoad_Tables() throws {
         let markdown = try XCTUnwrap(String.loadMarkdown(from: "sampleTableCommonHeading"), "Expected to load data from sampleWithTable.md file")
-        let chunks = MarkdownToChunks.generateChunks(from: markdown)
+        let chunks = MarkdownToChunks.generateChunks(from: markdown, docName: "sampleTableCommonHeading")
         
-        let expectedChunks = [ChunkRecord(page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories"], kind: .tableRow, tableName: "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories", columns: ["If the order has been:", "Converted in Coupa"], rowValues: ["If the order has been:": "Fully Invoiced", "Converted in Coupa": "Yes"]), ChunkRecord(page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories"], kind: .tableRow, tableName: "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories", columns: ["If the order has been:", "Converted in Coupa"], rowValues: ["If the order has been:": "Partially Invoiced", "Converted in Coupa": "Yes"])].map({ $0.formattedTableString })
+        let expectedChunks = [ParsedChunk(docName: "sampleTableCommonHeading", page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories"], kind: .tableRow, tableName: "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories", columns: ["If the order has been:", "Converted in Coupa"], rowValues: ["If the order has been:": "Fully Invoiced", "Converted in Coupa": "Yes"]), ParsedChunk(docName: "sampleTableCommonHeading", page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories"], kind: .tableRow, tableName: "COUPA ORDERING INSTRUCTIONS NOTE: Please contact your local leadership for approval to order the following accessories", columns: ["If the order has been:", "Converted in Coupa"], rowValues: ["If the order has been:": "Partially Invoiced", "Converted in Coupa": "Yes"])].map({ $0.formattedTableString })
         XCTAssertEqual(chunks.map { $0.formattedTableString }, expectedChunks, "Expected \(expectedChunks), but got \(chunks)")
     }
 
     func test_shouldLoad_tableWithDifferentSections() throws {
         let markdown = try XCTUnwrap(String.loadMarkdown(from: "sampleTableDifferentHeading"), "Expected to load data from sampleWithTable.md file")
-        let chunks = MarkdownToChunks.generateChunks(from: markdown)
+        let chunks = MarkdownToChunks.generateChunks(from: markdown, docName: "sampleTableDifferentHeading")
         
         let expectedChunks: [String] = ["ACCESSORIES FOR iPADS (COUPA)/iPAD ACCESSORY OPTIONS/APPLE POWER ADAPTER (GEN 7, 8, 9 iPADS) - APPLE POWER ADAPTER (GEN 7, 8, 9 iPADS) - DESCRIPTION: 12W USB Power Adapter for iPad PART NUMBER: MGN03AM/A PICTURE: L PRICE: $15.54"]
         XCTAssertEqual(chunks.map { $0.formattedTableString }, expectedChunks)
@@ -37,9 +37,9 @@ final class MarkdownToChunksTests: XCTestCase {
 
     func test_shouldLoad_withNotices() throws {
         let markdown = try XCTUnwrap(String.loadMarkdown(from: "sampleNotices"), "Expected to load data from sampleNotices.md file")
-        let chunks = MarkdownToChunks.generateChunks(from: markdown)
+        let chunks = MarkdownToChunks.generateChunks(from: markdown, docName: "sampleNotices")
         
-        let expectedChunk = [ChunkRecord(page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS"], kind: .notice, notice: Notice(severity: .note, title: "Note", message: "Please contact your local leadership for approval to order the following accessories")), ChunkRecord(page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS"], kind: .notice, notice: Notice(severity: .warning, title: "Warning", message: "This is a warning"))]
+        let expectedChunk = [ParsedChunk(docName: "sampleNotices", page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS"], kind: .notice, notice: Notice(severity: .note, title: "Note", message: "Please contact your local leadership for approval to order the following accessories")), ParsedChunk(docName: "sampleNotices", page: 1, headerPath: ["ACCESSORIES FOR iPADS (COUPA)", "COUPA ORDERING INSTRUCTIONS"], kind: .notice, notice: Notice(severity: .warning, title: "Warning", message: "This is a warning"))]
         
         XCTAssertEqual(chunks, expectedChunk)
     }
