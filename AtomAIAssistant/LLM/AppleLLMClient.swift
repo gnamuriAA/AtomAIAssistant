@@ -12,7 +12,7 @@ protocol ChatProvider {
     func chat(system: String, user: String) async throws -> String
 }
 
-final class OnDeviceLLMClient: ChatProvider {
+final class AppleLLMClient: ChatProvider {
     let modelSession: LanguageModelSession
     
     init(instruction: String) {

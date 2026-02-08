@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct AtomAIAssistantApp: App {
+    @StateObject var viewModel = ChatViewModel()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(viewModel: viewModel)
         }
+        .modelContainer(for: ChunkRecord.self)
     }
 }
