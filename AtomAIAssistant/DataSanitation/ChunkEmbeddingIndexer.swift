@@ -22,6 +22,19 @@ final class ChunkEmbeddingIndexer {
         self.modelContext = modelContext
     }
 
+    func hasAlreadyStoredEmbedding(for docName: String) -> Bool {
+        let predicate: Predicate<ChunkRecord>? = #Predicate { $0.embeddings != nil && $0.docName == docName }
+        
+        let desc = FetchDescriptor<ChunkRecord>(predicate: predicate)
+        do {
+            let all = try modelContext.fetch(desc)
+            return all.count > 0
+        } catch {
+            print("Failed to fetch data to check if already stored or not")
+        }
+        return false
+    }
+    
     @MainActor
     func index(parsedChunks: [ParsedChunk], batchSize: Int = 16, maxTextChars: Int = 1800, onProgress: ((DetailedEmbeddingProgress) -> Void)? = nil) async throws {
         var records = [ChunkRecord]()

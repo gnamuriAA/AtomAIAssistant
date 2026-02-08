@@ -40,7 +40,7 @@ class RetrieverModel {
         return denom == 0 ? -1 : dot / denom
     }
 
-    @MainActor func topK(for questionEmbedding: [Float], k: Int = 6) throws -> [RetrievedChunk] {
+    @MainActor func topK(for questionEmbedding: [Float], k: Int = 25) throws -> [RetrievedChunk] {
         let predicate: Predicate<ChunkRecord>?
 //        if let selectedDoc {
 //            predicate = #Predicate { $0.embeddings != nil && $0.docName == selectedDoc }

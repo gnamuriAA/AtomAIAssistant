@@ -31,10 +31,11 @@ final class MultiPDFEmbeddingPipeLine {
         for url in pdfURLs {
             let docName = makeDocName(from: url)
             onDocStart?(docName)
-            
-            let parsedChunks = try await chunker.chunkMarkdown(at: url, docName: docName)
-            
-            try await indexer.index(parsedChunks: parsedChunks, batchSize: batchSize, maxTextChars: maxTextChars, onProgress: onProgress)
+            if !indexer.hasAlreadyStoredEmbedding(for: docName) {
+                let parsedChunks = try await chunker.chunkMarkdown(at: url, docName: docName)
+                
+                try await indexer.index(parsedChunks: parsedChunks, batchSize: batchSize, maxTextChars: maxTextChars, onProgress: onProgress)
+            }
         }
     }
 
