@@ -55,6 +55,7 @@ struct ChatHolderView: View {
             
             Button {
                 send()
+                sendIsFocused = false
             } label: {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 28))

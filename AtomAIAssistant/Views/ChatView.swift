@@ -22,13 +22,11 @@ struct ChatView: View {
                         Spacer()
                     }
                 } else {
-
+                    
                     header
-
-                    NavigationStack {
-                        ChatHolderView(messages: $model.messages, qaService: qaService, chatClient: model.chatProvider)
-                            .environmentObject(embedProgress)
-                    }
+                    
+                    ChatHolderView(messages: $model.messages, qaService: qaService, chatClient: model.chatProvider)
+                        .environmentObject(embedProgress)
                 }
             } else {
                 Text("Failed to load chat service")
