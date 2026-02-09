@@ -16,7 +16,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "28"
             endingLineNumber = "28"
-            landmarkName = "answer(_:chatClient:)"
+            landmarkName = "answer(_:chatClient:history:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -32,7 +32,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "33"
             endingLineNumber = "33"
-            landmarkName = "answer(_:chatClient:)"
+            landmarkName = "answer(_:chatClient:history:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

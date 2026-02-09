@@ -17,7 +17,7 @@ final class QAService {
         self.retriever = RetrieverModel(modelContext: modelContext)
     }
 
-    func answer(_ question: String, chatClient: ChatProvider) async -> String {
+    func answer(_ question: String, chatClient: ChatProvider, history: [ChatTurn]) async -> String {
         do {
             // 1.Embed Question
             let qVec = try await QuestionVectorGeneration.getVector(with: embeddingsClient, question: question)
@@ -30,7 +30,7 @@ final class QAService {
             
             // 3. Build Prompt
             let system = PromptBuilder.systemPrompt()
-            let user = PromptBuilder.userPrompt(question: question, chunks: top)
+            let user = PromptBuilder.userPrompt(question: question, chunks: top, history: history)
             
             // 4. LLM Answer
             let answer = try await chatClient.chat(system: system, user: user)

@@ -21,7 +21,6 @@ final class AppleLLMClient: ChatProvider {
     
     func chat(system: String, user: String) async throws -> String {
         guard SystemLanguageModel.default.isAvailable else {
-            print("Apple Intelligence is not available on this device or region.")
             return "Apple Intelligence is not available on this device or region."
         }
         do {

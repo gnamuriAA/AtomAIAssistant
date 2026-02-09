@@ -57,3 +57,9 @@ struct ChatMessage: Identifiable, Hashable {
     let text: String
     let date: Date = Date()
 }
+
+extension ChatMessage {
+    func toChatTurn() -> ChatTurn {
+        .init(role: role, text: text)
+    }
+}
