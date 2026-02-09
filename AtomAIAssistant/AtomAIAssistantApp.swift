@@ -14,7 +14,9 @@ struct AtomAIAssistantApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(viewModel: viewModel)
+            NavigationStack {
+                ContentView(viewModel: viewModel)
+            }
         }
         .modelContainer(for: ChunkRecord.self)
     }
