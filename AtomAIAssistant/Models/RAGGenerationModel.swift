@@ -36,4 +36,9 @@ final class RAGGenerationModel {
     func configureContext(context: ModelContext) {
         self.modelContext = context
     }
+
+    @MainActor
+    func generateEmbedding(for url: URL, progress: @escaping (DetailedEmbeddingProgress) -> Void) async throws {
+        try await multiPDFEmbeddingPipeline?.processAllPDFs(pdfURLs: [url], onProgress: progress)
+    }
 }

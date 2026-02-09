@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+internal import UniformTypeIdentifiers
 
 struct ChatHolderView: View {
     @State private var input: String = ""
@@ -13,6 +14,8 @@ struct ChatHolderView: View {
 
     let qaService: QAService
     let chatClient: ChatProvider
+    @ObservedObject var viewModel: ChatViewModel
+    @ObservedObject var embedProgress: GlobalEmbeddingProgressViewModel
     @FocusState private var sendIsFocused: Bool
     
     var body: some View {
@@ -22,6 +25,20 @@ struct ChatHolderView: View {
             Divider()
             
             composer
+        }
+        .fileImporter(isPresented: $viewModel.showImporter, allowedContentTypes: [.pdf], allowsMultipleSelection: false) { result in
+            Task { @MainActor in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+                    viewModel.selectedPDF = url
+                    try await viewModel.upload(url) { progress in
+                        embedProgress.update(progress)
+                    }
+                case .failure(let failure):
+                    print("Failed to upload")
+                }
+            }
         }
     }
 
@@ -48,19 +65,29 @@ struct ChatHolderView: View {
 
     private var composer: some View {
         HStack(spacing: 10) {
-            TextField("Ask from PDFs...", text: $input, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1...4)
-                .focused($sendIsFocused)
-            
             Button {
-                send()
-                sendIsFocused = false
+                viewModel.showImporter = true
             } label: {
-                Image(systemName: "paperplane.fill")
-                    .font(.system(size: 28))
+                Image(systemName: "doc.on.doc")
             }
-            .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            if viewModel.isUploading {
+                ProgressView("Uploading & saving the markdown..")
+            } else {
+                TextField("Ask from PDFs...", text: $input, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .lineLimit(1...4)
+                    .focused($sendIsFocused)
+                
+                
+                Button {
+                    send()
+                    sendIsFocused = false
+                } label: {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 28))
+                }
+                .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
         }
         .padding()
         .background(Color(.systemBackground))

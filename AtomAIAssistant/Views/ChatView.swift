@@ -22,10 +22,9 @@ struct ChatView: View {
                         Spacer()
                     }
                 } else {
-                    
                     header
-                    
-                    ChatHolderView(messages: $model.messages, qaService: qaService, chatClient: model.chatProvider)
+
+                    ChatHolderView(messages: $model.messages, qaService: qaService, chatClient: model.chatProvider, viewModel: model, embedProgress: embedProgress)
                         .environmentObject(embedProgress)
                 }
             } else {

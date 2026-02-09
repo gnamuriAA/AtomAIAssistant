@@ -19,6 +19,11 @@ final class ChatViewModel: ObservableObject {
         .init(role: .assistant, text: "Ask me anything about the uploaded documents!")
     ]
     @Published var hasUpdatedQAService: Bool = false
+    @Published var showImporter = false
+    @Published var selectedPDF: URL?
+    @Published var isUploading: Bool = false
+    
+    private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: "")
 
     init() {
         embeddingClient = AppleEmbeddingClient()
@@ -44,6 +49,28 @@ final class ChatViewModel: ObservableObject {
         }
 
         try modelContext.delete(model: ChunkRecord.self)
+    }
+
+    func upload(_ url: URL, progress: @escaping (DetailedEmbeddingProgress) -> Void) async throws {
+        isUploading = true
+
+        Task {
+            do {
+                let didStart = url.startAccessingSecurityScopedResource()
+                defer { if didStart { url.stopAccessingSecurityScopedResource() } }
+                
+                let md = try await azureClient.analyzeToMarkdown(fileURL: url, contentType: "application/pdf")
+                let mdURL = try azureClient.saveMarkdown(md, fileName: "\(selectedPDF?.lastPathComponent.replacingOccurrences(of: ".pdf", with: "") ?? "NewDocument").md")
+                try await ragGenerationModel.generateEmbedding(for: mdURL, progress: progress)
+                await MainActor.run {
+                    isUploading = false
+                }
+            } catch {
+                await MainActor.run {
+                    isUploading = false
+                }
+            }
+        }
     }
 }
 
