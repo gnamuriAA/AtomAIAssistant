@@ -43,7 +43,7 @@ final class ChunkEmbeddingIndexer {
         var perPageCounter: [String: [Int: Int]] = [:]
         
         for (idx, c) in parsedChunks.enumerated() {
-            guard let full = EmbeddingTextBuilder.build(from: c) else { continue }
+            guard let full = c.text else { continue }
             let trimmed = String(full.prefix(maxTextChars))
             
             var pageMap = perPageCounter[c.docName, default: [:]]
@@ -151,6 +151,13 @@ final class ChunkEmbeddingIndexer {
                                       chunkIndexOnPage: nil,
                                       batchStart: nil, batchEnd: nil, batchSize: nil)
         )
+    }
+
+    @MainActor
+    func indexEmbedChunks(embedChunks: [EmbedChunk], batchSize: Int = 2, maxTextChars: Int = 1800, onProgress: ((DetailedEmbeddingProgress) -> Void)? = nil) async throws {
+        let parsedForEmbeddings = embedChunks.map { ParsedChunk.fromEmbed($0) }
+        
+        try await index(parsedChunks: parsedForEmbeddings, batchSize: batchSize, maxTextChars: maxTextChars, onProgress: onProgress)
     }
 }
 fileprivate func floatsToData(_ floats: [Float]) -> Data {

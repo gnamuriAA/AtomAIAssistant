@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 protocol MarkdownChunkingProvider {
-    func chunkMarkdown(at url: URL, docName: String) async throws -> [ParsedChunk]
+    func chunkMarkdown(at url: URL, docName: String) async throws -> [EmbedChunk]
 }
 
 final class MultiPDFEmbeddingPipeLine {
@@ -32,9 +32,9 @@ final class MultiPDFEmbeddingPipeLine {
             let docName = makeDocName(from: url)
             onDocStart?(docName)
             if !indexer.hasAlreadyStoredEmbedding(for: docName) {
-                let parsedChunks = try await chunker.chunkMarkdown(at: url, docName: docName)
+                let embedChunks = try await chunker.chunkMarkdown(at: url, docName: docName)
                 
-                try await indexer.index(parsedChunks: parsedChunks, batchSize: batchSize, maxTextChars: maxTextChars, onProgress: onProgress)
+                try await indexer.indexEmbedChunks(embedChunks: embedChunks, batchSize: batchSize, maxTextChars: maxTextChars, onProgress: onProgress)
             }
         }
     }
@@ -45,8 +45,10 @@ final class MultiPDFEmbeddingPipeLine {
 }
 
 final class PDFMarkdownChunkingProvider: MarkdownChunkingProvider {
-    func chunkMarkdown(at url: URL, docName: String) async throws -> [ParsedChunk] {
+    func chunkMarkdown(at url: URL, docName: String) async throws -> [EmbedChunk] {
         let markdownString = try String(contentsOf: url, encoding: .utf8)
-        return MarkdownToChunks.generateChunks(from: markdownString, docName: docName)
+        let parsedChunks = MarkdownToChunks.generateChunks(from: markdownString, docName: docName)
+        let parsedChunker = ParsedChunker()
+        return parsedChunker.makeEmbedChunks(from: parsedChunks)
     }
 }

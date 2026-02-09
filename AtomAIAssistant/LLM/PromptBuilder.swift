@@ -15,9 +15,7 @@ struct PromptBuilder {
                     
                     RULES:
                     - Answer ONLY using the provided CONTEXT from PDFs.
-                    - If the answer is not found, reply exactly:
-                    "Not Found in the provided PDFs."
-                    - Always cite sources as:
+                    - Always cite sources at the end of the response as:
                     (PDF: <docName>, page <pageNumber>)
                     """
     }

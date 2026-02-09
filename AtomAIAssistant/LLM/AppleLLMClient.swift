@@ -13,7 +13,7 @@ protocol ChatProvider {
 }
 
 final class AppleLLMClient: ChatProvider {
-    let modelSession: LanguageModelSession
+    var modelSession: LanguageModelSession
     
     init(instruction: String) {
         modelSession = LanguageModelSession(instructions: instruction)
@@ -24,12 +24,13 @@ final class AppleLLMClient: ChatProvider {
             print("Apple Intelligence is not available on this device or region.")
             return "Apple Intelligence is not available on this device or region."
         }
-        let newModelSession = LanguageModelSession(instructions: system)
         do {
-            let response = try await newModelSession.respond(to: user)
+            let response = try await modelSession.respond(to: user)
             return response.content
         } catch {
-            return error.localizedDescription
+            modelSession = LanguageModelSession(instructions: system)
+            let response = try await modelSession.respond(to: user)
+            return response.content
         }
     }
 }

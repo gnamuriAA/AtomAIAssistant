@@ -68,7 +68,6 @@ struct ParsedChunk: Codable, Hashable {
             return nil
         }
 
-        let header = headerPath.joined(separator: "/")
         let table = tableName ?? "Table"
         
         let rowString = rowValues
@@ -76,7 +75,7 @@ struct ParsedChunk: Codable, Hashable {
             .map { "\($0.key): \($0.value)" }
             .joined(separator: " ")
 
-        return "\(header) - \(table) - \(rowString)"
+        return "\(table) - \(rowString)"
     }
 }
 
@@ -109,4 +108,35 @@ struct ChunkMeta: Codable, Hashable {
     let columns: [String]?
     let rowValues: [String: String]?
     let notice: Notice?
+}
+
+extension ParsedChunk {
+    static func fromEmbed(_ c: EmbedChunk) -> ParsedChunk {
+        let kind: ChunkKind
+        switch c.kind {
+        case .text, .digest: kind = .text
+        case .table: kind = .tableRow
+        case .notice: kind = .notice
+        }
+        
+        var tableName: String? = nil
+        var columns: [String]? = nil
+        
+        if c.kind == .table {
+            tableName = c.meta["tableName"]
+            if let cols = c.meta["columns"] {
+                columns = cols.split(separator: "|").map { String($0) }
+            }
+        }
+        
+        var notice: Notice? = nil
+        
+        if c.kind == .notice {
+            let sevSer = (c.meta["severity"] ?? "note")
+            let sev = NoticeSeverity(rawValue: sevSer) ?? .note
+            notice = Notice(severity: sev, title: nil, message: c.text)
+        }
+
+        return ParsedChunk(docName: c.docName, page: c.pageStart, headerPath: c.headerPath, kind: .text, text: c.text, tableName: tableName, columns: columns, rowValues: nil, notice: notice)
+    }
 }

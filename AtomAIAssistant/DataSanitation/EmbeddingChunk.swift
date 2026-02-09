@@ -19,19 +19,17 @@ struct EmbeddingChunk: Codable, Hashable {
 
 enum EmbeddingTextBuilder {
     static func build(from record: ParsedChunk) -> String? {
-        let header = record.headerPath.isEmpty ? "Document" : record.headerPath.joined(separator: " / ")
-        
         switch record.kind {
         case .text:
             guard let text = record.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
-            return "\(header) | \(text)"
+            return "\(text)"
         case .tableRow:
             guard let columns = record.columns, !columns.isEmpty, let formattedTableString = record.formattedTableString else { return nil }
             return formattedTableString
         case .notice:
             guard let n = record.notice else { return nil }
             let titlePart = n.title.map { "\($0)" } ?? n.severity.rawValue.capitalized
-            return "\(header) | \(titlePart) (\(n.severity.rawValue)): \(n.message)"
+            return "\(titlePart) (\(n.severity.rawValue)): \(n.message)"
         }
     }
 }
