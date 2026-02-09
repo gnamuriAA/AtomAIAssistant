@@ -15,7 +15,10 @@ protocol ChatProvider {
 final class AppleLLMClient: ChatProvider {
     var modelSession: LanguageModelSession
     
-    init(instruction: String) {
+    init?(instruction: String) {
+        guard SystemLanguageModel.default.isAvailable else {
+            return nil
+        }
         modelSession = LanguageModelSession(instructions: instruction)
     }
     

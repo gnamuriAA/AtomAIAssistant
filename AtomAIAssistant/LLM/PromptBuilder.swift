@@ -15,20 +15,16 @@ struct ChatTurn {
 struct PromptBuilder {
     
     static func systemPrompt() -> String {
-                    """
-                    You are a strict, context‑bound assistant.
-
-                    RULES:
-                    - Answer ONLY using the provided PDF CONTEXT.
-                    - If a detail is not explicitly present in the context, state:
-                      “The answer is not available in the provided PDF context.”
-                    - Do NOT infer, assume, or generate unsupported information.
-                    - Do NOT cite if no source is available.
-                    - Keep responses factual and concise.
-                    - MUST append at the end of the response with:
-                        (PDF: <PDF>, page <page>)
-
-                    """
+                                        """
+                                        You are a helpful assistant.
+                                        
+                                        RULES:
+                                        - Answer ONLY using the provided CONTEXT from PDFs.
+                                        - If the answer is not found, reply exactly:
+                                        "Not Found in the provided PDFs."
+                                        - Always cite sources as:
+                                        (PDF: <docName>, page <pageNumber>)
+                                        """
     }
 
     static func userPrompt(question: String, chunks: [RetrievedChunk], history: [ChatTurn], maxHistoryChars: Int = 4000) -> String {
@@ -54,9 +50,6 @@ struct PromptBuilder {
         let historyText = kept.reversed().joined(separator: "\n")
         
         return """
-            PREVIOUS MESSAGES (for continuity; still must obey PDF-only rule):
-            \(historyText.isEmpty ? "None" : historyText)
-            
             CONTEXT:
             \(context)
             

@@ -23,11 +23,12 @@ final class ChatViewModel: ObservableObject {
     @Published var selectedPDF: URL?
     @Published var isUploading: Bool = false
     
-    private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: "")
+    private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: azureAPIKey)
 
     init() {
         embeddingClient = AppleEmbeddingClient()
-        chatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
+//        chatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
+        chatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
     }
 
     func configureContext(modelContext: ModelContext) {
@@ -90,3 +91,5 @@ extension ChatMessage {
         .init(role: role, text: text)
     }
 }
+
+let azureAPIKey = ""
