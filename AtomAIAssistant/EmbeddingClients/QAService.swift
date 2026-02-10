@@ -23,7 +23,7 @@ final class QAService {
             let qVec = try await QuestionVectorGeneration.getVector(with: embeddingsClient, question: question)
             
             // 2. Retrieve Chunks
-            let top = try retriever.topK(for: qVec)
+            let top = try retriever.topK(for: qVec, question: question)
             if top.isEmpty {
                 return "Not found in the provided PDFs."
             }
