@@ -17,27 +17,25 @@ final class QAService {
         self.retriever = RetrieverModel(modelContext: modelContext)
     }
 
-    func answer(_ question: String, chatClient: ChatProvider, history: [ChatTurn]) async -> String {
-        do {
-            // 1.Embed Question
-            let qVec = try await QuestionVectorGeneration.getVector(with: embeddingsClient, question: question)
-            
-            // 2. Retrieve Chunks
-            let top = try retriever.topK(for: qVec, question: question)
-            if top.isEmpty {
-                return "Not found in the provided PDFs."
-            }
-            
-            // 3. Build Prompt
-            let system = PromptBuilder.systemPrompt()
-            let user = PromptBuilder.userPrompt(question: question, chunks: top, history: history)
-            
-            // 4. LLM Answer
-            let answer = try await chatClient.chat(system: system, user: user)
-            return answer.trimmingCharacters(in: .whitespacesAndNewlines)
-        } catch {
-            return "Error: \(error.localizedDescription)"
-        }
+    func answer(_ question: String, chatClient: ChatProvider, history: [ChatTurn]) async throws -> (llmResponse: String, rawString: String) {
+        // 2. Retrieve Chunks
+        let top = try await getRawAnswers(question: question)
+        
+        // 3. Build Prompt
+        let system = PromptBuilder.systemPrompt()
+        let user = PromptBuilder.userPrompt(question: question, chunks: top, history: history)
+        
+        // 4. LLM Answer
+        let answer = try await chatClient.chat(system: system, user: user)
+        return (answer.trimmingCharacters(in: .whitespacesAndNewlines), top.map { $0.record.embeddingText }.joined(separator: "\n\n"))
+    }
+
+    func getRawAnswers(question: String) async throws -> [RetrievedChunk] {
+        // 1.Embed Question
+        let qVec = try await QuestionVectorGeneration.getVector(with: embeddingsClient, question: question)
+        
+        // 2. Retrieve Chunks
+        return try retriever.topK(for: qVec, question: question)
     }
 }
 

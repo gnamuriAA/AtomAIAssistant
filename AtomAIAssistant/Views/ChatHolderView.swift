@@ -111,7 +111,7 @@ struct ChatHolderView: View {
         messages.append(.init(role: .user, text: question))
         
         Task {
-            let response = await qaService.answer(question, chatClient: chatClient, history: messages.map{ $0.toChatTurn() })
+            let response = await viewModel.answer(for: question, history: messages.map{ $0.toChatTurn() })
             await MainActor.run {
                 messages.append(.init(role: .assistant, text: response))
             }
