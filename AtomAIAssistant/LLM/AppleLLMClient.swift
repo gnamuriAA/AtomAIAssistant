@@ -23,14 +23,14 @@ final class AppleLLMClient: ChatProvider {
         guard SystemLanguageModel.default.isAvailable else {
             return "Apple Intelligence is not available on this device or region."
         }
-        do {
+//        do {
             let response = try await modelSession.respond(to: user)
             return response.content
-        } catch {
-            modelSession = LanguageModelSession(instructions: system)
-            let response = try await modelSession.respond(to: user)
-            return response.content
-        }
+//        } catch {
+//            modelSession = LanguageModelSession(instructions: system)
+//            let response = try await modelSession.respond(to: user)
+//            return response.content
+//        }
     }
 }
 
