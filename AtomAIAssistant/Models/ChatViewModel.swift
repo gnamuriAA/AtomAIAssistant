@@ -15,7 +15,7 @@ final class ChatViewModel: ObservableObject {
     private var modelContext: ModelContext?
     private let embeddingClient: EmbeddingProvider
     private(set) var chatProvider: ChatProvider
-    private(set) var azureChatProvider: ChatProvider
+    private(set) var azureChatProvider: ChatProvider?
     @Published var messages: [ChatMessage] = [
         .init(role: .assistant, text: "Ask me anything about the uploaded documents!")
     ]
@@ -28,8 +28,9 @@ final class ChatViewModel: ObservableObject {
 
     init() {
         embeddingClient = AppleEmbeddingClient()
-        azureChatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
-        chatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
+//        chatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
+        chatProvider = OllamaLLMClient()
+//        azureChatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
     }
 
     func configureContext(modelContext: ModelContext) {
@@ -82,25 +83,27 @@ final class ChatViewModel: ObservableObject {
         var triedWithAppleLLM = true
         do {
             var response = try await qaService.answer(query, chatClient: chatProvider, history: history)
+            print("response is \(response)")
             if response.llmResponse == "Apple Intelligence is not available on this device or region." {
                 triedWithAppleLLM = false
-                response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
+//                response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
+                response = ("", "Failed to load with Ollama LLM. Trying with Azure OpenAI...")
                 
             }
             return response.llmResponse
         } catch {
             if triedWithAppleLLM {
-                do {
-                    let response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
-                    return response.llmResponse
-                } catch {
+//                do {
+//                    let response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
+//                    return response.llmResponse
+//                } catch {
                     guard let rawResults = try? await qaService.getRawAnswers(question: query) else {
                         return "Failed to load answer vectors chunks from local store. Please try again later."
                     }
                     let filteredRecords = rawResults.filter { $0.finalScore >= 0.8 }
                     let textToReturn = filteredRecords.map { $0.record.embeddingText }.joined(separator: "\n\n")
                     return textToReturn.isEmpty ? "No relevant answers found." : textToReturn
-                }
+//                }
             }
         }
         return "Failed to load answer from both Apple Intelligence and Azure OpenAI. Please try again later."
