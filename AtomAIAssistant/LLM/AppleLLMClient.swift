@@ -21,7 +21,7 @@ final class AppleLLMClient: ChatProvider {
     
     func chat(system: String, user: String) async throws -> String {
         guard SystemLanguageModel.default.isAvailable else {
-            return "Apple Intelligence is not available on this device or region."
+            throw NSError(domain: "Apple Intelligence is not available on this device or region.", code: 1001)
         }
 //        do {
             let response = try await modelSession.respond(to: user)
