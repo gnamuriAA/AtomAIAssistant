@@ -31,7 +31,7 @@ final class OllamaLLMClient: NSObject, ChatProvider, ObservableObject {
     }
 
     func chat(system: String, user: String) async throws -> String {
-        let prompt = QwenPrompt.chat(
+        let prompt = QwenPrompt.llama32Prompt(
                     system: system,
                     user: user)
         return try await withCheckedThrowingContinuation { continuation in
