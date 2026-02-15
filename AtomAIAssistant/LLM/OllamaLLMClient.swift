@@ -12,6 +12,7 @@ final class OllamaLLMClient: NSObject, ChatProvider, ObservableObject {
     private let runner = LlamaRunner()
     @Published var isGenerating: Bool = false
     @Published var generatedResponse: String = ""
+    var isModelLoaded: Bool = false
 
     override init() {
         super.init()
@@ -25,12 +26,16 @@ final class OllamaLLMClient: NSObject, ChatProvider, ObservableObject {
         }
         do {
             try runner.load(modelURL: url, contextTokens: 2048, threads: 6)
+            isModelLoaded = true
         } catch {
             print("Failed to load model: \(error.localizedDescription)")
         }
     }
 
     func chat(system: String, user: String) async throws -> String {
+        guard isModelLoaded else {
+            throw NSError(domain: "Model not loaded", code: 1002, userInfo: nil)
+        }
         let prompt = QwenPrompt.llama32Prompt(
                     system: system,
                     user: user)

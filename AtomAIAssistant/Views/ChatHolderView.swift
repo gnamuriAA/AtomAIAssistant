@@ -11,9 +11,6 @@ internal import UniformTypeIdentifiers
 struct ChatHolderView: View {
     @State private var input: String = ""
     @Binding var messages: [ChatMessage]
-
-    let qaService: QAService
-    let chatClient: ChatProvider
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var embedProgress: GlobalEmbeddingProgressViewModel
     @FocusState private var sendIsFocused: Bool
@@ -80,8 +77,8 @@ struct ChatHolderView: View {
                 
                 
                 Button {
-                    send()
                     sendIsFocused = false
+                    send()
                 } label: {
                     Image(systemName: "paperplane.fill")
                         .font(.system(size: 28))

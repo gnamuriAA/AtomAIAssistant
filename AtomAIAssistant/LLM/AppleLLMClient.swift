@@ -28,7 +28,7 @@ final class AppleLLMClient: ObservableObject, ChatProvider {
         guard SystemLanguageModel.default.isAvailable else {
             isGenerating = false
             generatedResponse = "Apple Intelligence is not available on this device or region."
-            return "Apple Intelligence is not available on this device or region."
+            throw NSError(domain: "Apple Intelligence is not available on this device or region.", code: 1001, userInfo: nil)
         }
         isGenerating = false
 //        do {

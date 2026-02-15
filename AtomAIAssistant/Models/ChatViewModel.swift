@@ -14,8 +14,9 @@ final class ChatViewModel: ObservableObject {
     private(set) var qaService: QAService?
     private var modelContext: ModelContext?
     private let embeddingClient: EmbeddingProvider
-    private(set) var chatProvider: ChatProvider
-    private(set) var azureChatProvider: ChatProvider?
+    private var appleChatProvider: ChatProvider
+    private(set) var ollamaChatProvider: ChatProvider
+    private(set) var azureChatProvider: ChatProvider
     @Published var messages: [ChatMessage] = [
         .init(role: .assistant, text: "Ask me anything about the uploaded documents!")
     ]
@@ -23,14 +24,16 @@ final class ChatViewModel: ObservableObject {
     @Published var showImporter = false
     @Published var selectedPDF: URL?
     @Published var isUploading: Bool = false
+    private var loadFromLocalModel: TransformUsingLocalModels
     
     private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: azureAPIKey)
 
     init() {
         embeddingClient = AppleEmbeddingClient()
-//        chatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
-        chatProvider = OllamaLLMClient()
-//        azureChatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
+        appleChatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
+        ollamaChatProvider = OllamaLLMClient()
+        azureChatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
+        loadFromLocalModel = TransformUsingLocalModels(appleModel: appleChatProvider, llamaModel: ollamaChatProvider)
     }
 
     func configureContext(modelContext: ModelContext) {
@@ -80,33 +83,31 @@ final class ChatViewModel: ObservableObject {
         guard let qaService else {
             return "QA Service not ready yet. Please wait a moment and try again."
         }
-        var triedWithAppleLLM = true
+        var result: (llmResponse: String, rawString: String) = ("", "")
         do {
-            var response = try await qaService.answer(query, chatClient: chatProvider, history: history)
-            print("response is \(response)")
-            if response.llmResponse == "Apple Intelligence is not available on this device or region." {
-                triedWithAppleLLM = false
-//                response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
-                response = ("", "Failed to load with Ollama LLM. Trying with Azure OpenAI...")
-                
-            }
-            return response.llmResponse
+            result = try await transformUsingLocalLLMAndThenAzure(for: query, history: history, qaService: qaService)
         } catch {
-            if triedWithAppleLLM {
-//                do {
-//                    let response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
-//                    return response.llmResponse
-//                } catch {
-                    guard let rawResults = try? await qaService.getRawAnswers(question: query) else {
-                        return "Failed to load answer vectors chunks from local store. Please try again later."
-                    }
-                    let filteredRecords = rawResults.filter { $0.finalScore >= 0.8 }
-                    let textToReturn = filteredRecords.map { $0.record.embeddingText }.joined(separator: "\n\n")
-                    return textToReturn.isEmpty ? "No relevant answers found." : textToReturn
-//                }
+            guard let rawResults = try? await qaService.getRawAnswers(question: query) else {
+                return "Failed to load answer vectors chunks from local store. Please try again later."
             }
+            let filteredRecords = rawResults.filter { $0.finalScore >= 0.8 }
+            let textToReturn = filteredRecords.map { $0.record.embeddingText }.joined(separator: "\n\n")
+            return textToReturn.isEmpty ? "No relevant answers found." : (textToReturn + "\n Loaded raw results had a final score of >= 0.8 but failed to get an answer from the local LLM.")
         }
-        return "Failed to load answer from both Apple Intelligence and Azure OpenAI. Please try again later."
+        return result.llmResponse
+    }
+
+    func transformUsingLocalLLMAndThenAzure(for query: String, history: [ChatTurn], qaService: QAService) async throws -> (llmResponse: String, rawString: String) {
+        do {
+            return try await loadFromLocalModel.load(query: query, history: history, qaService: qaService)
+        } catch {
+            // Make azure call
+            return try await transformUsingAzure(for: query, history: history, qaService: qaService)
+        }
+    }
+
+    private func transformUsingAzure(for query: String, history: [ChatTurn], qaService: QAService) async throws -> (llmResponse: String, rawString: String) {
+        try await qaService.answer(query, chatClient: azureChatProvider, history: history)
     }
 }
 
