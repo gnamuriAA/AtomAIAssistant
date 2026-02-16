@@ -37,7 +37,7 @@ final class ChatViewModel: ObservableObject {
     private let apiClient: AtomAIAssistantClient
     let quickQuestionsModel: QuickQuestionModel
     @Published var quickQuestions: [QuickQuestion] = []
-    private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "https://osp.maverick.aa.com/usersafeoiladd/")]
+    private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "ospappurl=https://osp.maverick.aa.com/usersafeoiladd/")]
     private var speechRecognizer = SpeechRecognizer()
     @Published var input: String = ""
     @Published private(set) var isListening: Bool = false
@@ -165,6 +165,7 @@ final class ChatViewModel: ObservableObject {
 
     func answer(for query: String) async {
         messages.append(.init(role: .user, text: query))
+        stopListening()
         isAnswering = true
         if let launchCommand = parseLaunchCommand(query), appsToLaunch.keys.contains(launchCommand.appName.lowercased()) {
             if let string = appsToLaunch[launchCommand.appName.lowercased()], let url = URL(string: "\(string.bundleId)://\((launchCommand.rawParams == nil) ? "" : (string.paramKey + launchCommand.rawParams!))") {
@@ -180,6 +181,7 @@ final class ChatViewModel: ObservableObject {
                             updatedMessageText += " with params: **\(params)**"
                         }
                         DispatchQueue.main.async {
+                            self.input = ""
                             self.messages.removeLast()
                             self.messages.append(.init(role: .system, text: updatedMessageText))
                             self.isAnswering = false
