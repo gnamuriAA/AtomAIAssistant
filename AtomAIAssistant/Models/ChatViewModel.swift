@@ -38,6 +38,11 @@ final class ChatViewModel: ObservableObject {
     let quickQuestionsModel: QuickQuestionModel
     @Published var quickQuestions: [QuickQuestion] = []
     private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "https://osp.maverick.aa.com/usersafeoiladd/")]
+    private var speechRecognizer = SpeechRecognizer()
+    @Published var input: String = ""
+    @Published private(set) var isListening: Bool = false
+    @Published private(set) var isStoppedDueToSilence = false
+    @Published private(set) var isSpeaking: Bool = false
 
     init() {
         embeddingClient = AppleEmbeddingClient()
@@ -45,7 +50,38 @@ final class ChatViewModel: ObservableObject {
         chatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
         apiClient = AtomAIAssistantClient()
         quickQuestionsModel = QuickQuestionModel()
+        
+        speechRecognizer.$transcript
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                guard !value.isEmpty else {
+                    return
+                }
+                self?.input = value
+            }
+            .store(in: &cancellables)
 
+        speechRecognizer.$isListening
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] listening in
+                self?.isListening = listening
+            }
+            .store(in: &cancellables)
+
+        speechRecognizer.$isStoppedDueToSilence
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] dueToSilence in
+                self?.isStoppedDueToSilence = dueToSilence
+            }
+            .store(in: &cancellables)
+
+        speechRecognizer.$isSpeaking
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                self?.isSpeaking = value
+            }
+            .store(in: &cancellables)
+        
         monitor.$isConnected
             .combineLatest(monitor.$interfaceType)
             .receive(on: DispatchQueue.main)
@@ -66,6 +102,22 @@ final class ChatViewModel: ObservableObject {
             .store(in: &cancellables)
         
         monitor.startMonitoring()
+    }
+
+    func startListening() {
+        speechRecognizer.startRecording()
+    }
+
+    func stopListening() {
+        speechRecognizer.stopRecording()
+    }
+    
+    func startSpeaking(text: String) {
+        speechRecognizer.speak(text: text)
+    }
+
+    func stopSpeaking() {
+        speechRecognizer.stopSpeaking()
     }
 
     func configureContext(modelContext: ModelContext) {

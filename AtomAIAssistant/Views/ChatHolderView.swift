@@ -9,7 +9,6 @@ import SwiftUI
 internal import UniformTypeIdentifiers
 
 struct ChatHolderView: View {
-    @State private var input: String = ""
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var embedProgress: GlobalEmbeddingProgressViewModel
     @FocusState private var sendIsFocused: Bool
@@ -44,7 +43,7 @@ struct ChatHolderView: View {
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(viewModel.messages) { message in
-                        ChatBubble(message: message)
+                        ChatBubble(viewModel: viewModel, message: message)
                             .id(message.id)
                     }
                     if viewModel.isAnswering {
@@ -73,8 +72,37 @@ struct ChatHolderView: View {
 
     private var composer: some View {
         VStack(alignment: .leading) {
+            HStack {
+                quickQuestions
 
-            quickQuestions
+                if viewModel.isListening {
+                    Button {
+                        viewModel.stopListening()
+                    } label: {
+                        Text("Stop listening")
+                        
+                        Image(systemName: "microphone.slash")
+                            .resizable()
+                            .frame(width: 15, height: 15)
+                            .foregroundColor(.blue)
+                            .foregroundColor(.red)
+                    }
+                }
+                if viewModel.isSpeaking {
+                    Button {
+                        viewModel.stopSpeaking()
+                    } label: {
+                        HStack {
+                            Text("Stop Speaking")
+
+                            Image(systemName: "microphone.slash")
+                                .resizable()
+                                .frame(width: 15, height: 15)
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
+            }
 
             HStack(spacing: 10) {
                 Button {
@@ -85,25 +113,36 @@ struct ChatHolderView: View {
                 if viewModel.isUploading {
                     ProgressView("Uploading & saving the markdown..")
                 } else {
-                    TextField("Ask from PDFs...", text: $input, axis: .vertical)
+                    TextField("Ask from PDFs...", text: $viewModel.input, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                         .lineLimit(1...4)
                         .focused($sendIsFocused)
-                    
-                    Button {
-                        send()
-                        sendIsFocused = false
-                    } label: {
-                        Text("Send")
-                            .foregroundStyle(.white)
-                            .font(.body.bold())
-                            .padding(.horizontal)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule(style: .circular)
-                            )
+                    HStack {
+                        Button {
+                            viewModel.startListening()
+                            sendIsFocused = false
+                        } label: {
+                            Image(systemName: "waveform.badge.microphone")
+                                .resizable()
+                                .frame(width: 30, height: 30)
+                        }
+                        .disabled(viewModel.isAnswering || viewModel.isListening)
+
+                        Button {
+                            send()
+                            sendIsFocused = false
+                        } label: {
+                            Text("Send")
+                                .foregroundStyle(.white)
+                                .font(.body.bold())
+                                .padding(.horizontal)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule(style: .circular)
+                                )
+                        }
+                        .disabled(viewModel.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnswering)
                     }
-                    .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnswering)
                 }
             }
             .padding(.top, 6)
@@ -123,7 +162,7 @@ struct ChatHolderView: View {
             HStack(spacing: 12) {
                 ForEach(viewModel.quickQuestions) { question in
                     QuickQuestionView(question: question, isDisabled: $viewModel.isUploading) { question in
-                        input = question
+                        viewModel.input = question
                         send()
                     }
                 }
@@ -141,11 +180,11 @@ struct ChatHolderView: View {
     }
 
     private func send() {
-        let question = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let question = viewModel.input.trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard !question.isEmpty else { return }
         
-        input = ""
+        viewModel.input = ""
         Task {
             await viewModel.answer(for: question)
         }
