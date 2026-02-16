@@ -6,33 +6,45 @@
 //
 
 import Combine
+import Foundation
 
 final class QuickQuestionModel: ObservableObject {
-    @Published var questions: [String] = []
+    @Published var questions: [QuickQuestion] = []
     private var cancellables = Set<AnyCancellable>()
     @Published var isOnline: Bool = false {
         didSet {
             if isOnline {
-                questions = Array(onlineQuickQuestion.keys)
+                questions = onlineQuickQuestion
             } else {
-                questions = Array(offlineQuickQuestion.keys)
+                questions = offlineQuickQuestion
             }
         }
     }
 
     init() {}
-
-    func getQuestion(for key: String) -> String {
-        return onlineQuickQuestion[key] ?? offlineQuickQuestion[key] ?? ""
-    }
 }
 
 private extension QuickQuestionModel {
-    var offlineQuickQuestion: [String: String] {
-        ["iPad Accessories": "What are the available iPad accessories?", "Pencil Price" :"What is the price of Apple Pencil?", "COUPA Support": "If the order has been full invoiced, will it be converted in coupa?"]
+    var offlineQuickQuestion: [QuickQuestion] {
+        [
+            QuickQuestion(iconName: "apps.ipad", question: "What are the available iPad accessories?", title: "iPad Accessories"),
+            QuickQuestion(iconName: "pencil.circle", question: "What is the price of Apple Pencil?", title: "Pencil Price"),
+            QuickQuestion(iconName: "text.document", question: "If the order has been full invoiced, will it be converted in coupa?", title: "COUPA Support")
+        ]
     }
+    
+    var onlineQuickQuestion: [QuickQuestion] {
+        [
+            QuickQuestion(iconName: "camera.fill", question: "How do I use the camera on the iPad?", title: "iPad Camera"),
+            QuickQuestion(iconName: "wifi", question: "How do I connect to Wi-Fi?", title: "Wi-Fi Setup"),
+            QuickQuestion(iconName: "rocket.fil", question: "What are the quick start steps?", title: "Quick Start")
+        ]
+    }
+}
 
-    var onlineQuickQuestion: [String: String] {
-        ["iPad Camera": "How do I use the camera on the iPad?", "Wi-Fi Setup": "How do I connect to Wi-Fi?", "Quick Start": "What are the quick start steps?"]
-    }
+struct QuickQuestion: Identifiable, Hashable {
+    let id = UUID()
+    let iconName: String
+    let question: String
+    let title: String
 }

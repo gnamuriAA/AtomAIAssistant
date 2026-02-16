@@ -26,6 +26,7 @@ final class ChatViewModel: ObservableObject {
     @Published var showImporter = false
     @Published var selectedPDF: URL?
     @Published var isUploading: Bool = false
+    @Published var isAnswering: Bool = false
     private var sessionID = UUID()
     @Published private(set) var isOnline: Bool = true
     @Published private(set) var currentInterface: NWInterface.InterfaceType?
@@ -35,7 +36,7 @@ final class ChatViewModel: ObservableObject {
     private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: azureAPIKey)
     private let apiClient: AtomAIAssistantClient
     let quickQuestionsModel: QuickQuestionModel
-    @Published var quickQuestions: [String] = []
+    @Published var quickQuestions: [QuickQuestion] = []
     private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "https://osp.maverick.aa.com/usersafeoiladd/")]
 
     init() {
@@ -112,6 +113,7 @@ final class ChatViewModel: ObservableObject {
 
     func answer(for query: String) async {
         messages.append(.init(role: .user, text: query))
+        isAnswering = true
         if let launchCommand = parseLaunchCommand(query), appsToLaunch.keys.contains(launchCommand.appName.lowercased()) {
             if let string = appsToLaunch[launchCommand.appName.lowercased()], let url = URL(string: "\(string.bundleId)://\((launchCommand.rawParams == nil) ? "" : (string.paramKey + launchCommand.rawParams!))") {
                 var messageText = "Launching **\(launchCommand.appName.capitalized)**"
@@ -128,23 +130,28 @@ final class ChatViewModel: ObservableObject {
                         DispatchQueue.main.async {
                             self.messages.removeLast()
                             self.messages.append(.init(role: .system, text: updatedMessageText))
+                            self.isAnswering = false
                         }
                     }
                 }
             } else {
                 messages.append(.init(role: .system, text: "Cannot Launching \(launchCommand.appName) with params: \(launchCommand.rawParams ?? "none") as this is not configured."))
+                isAnswering = false
             }
         } else {
             if isOnline {
                 do {
                     let askResponse = try await answerWithAPI(question: query, sessionId: sessionID.uuidString)
                     messages.append(.init(role: .assistant, text: askResponse.formattedString))
+                    isAnswering = false
                 } catch {
                     messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
+                    isAnswering = false
                 }
             } else {
                 let response = await answerFromLocal(for: query, history: messages.map { $0.toChatTurn() })
                 messages.append(.init(role: .assistant, text: response))
+                isAnswering = false
             }
         }
     }
