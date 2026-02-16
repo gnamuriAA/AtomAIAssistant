@@ -10,6 +10,7 @@ import SwiftData
 
 enum AvailableMarkdown: String, CaseIterable {
     case ipad_accessories
+    case pin_change
 
     var url: URL {
         Bundle.main.url(forResource: self.rawValue, withExtension: "md")!
