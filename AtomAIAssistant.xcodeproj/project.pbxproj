@@ -411,7 +411,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = ZGE7Q5M697;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We will be using micropone to convert tspeech to text";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We will be using micropone to convert speech to text. And readout the messages to the user.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -448,7 +448,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = ZGE7Q5M697;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We will be using micropone to convert tspeech to text";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We will be using micropone to convert speech to text. And readout the messages to the user.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
