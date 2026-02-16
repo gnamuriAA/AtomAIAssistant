@@ -27,7 +27,7 @@ final class QuickQuestionModel: ObservableObject {
 private extension QuickQuestionModel {
     var offlineQuickQuestion: [QuickQuestion] {
         [
-            QuickQuestion(iconName: "apps.ipad", question: "What are the available iPad accessories?", title: "iPad Accessories"),
+            QuickQuestion(iconName: "apps.ipad", question: "iPad accessories", title: "iPad Accessories"),
             QuickQuestion(iconName: "pencil.circle", question: "What is the price of Apple Pencil?", title: "Pencil Price"),
             QuickQuestion(iconName: "text.document", question: "If the order has been full invoiced, will it be converted in coupa?", title: "COUPA Support")
         ]
@@ -37,7 +37,7 @@ private extension QuickQuestionModel {
         [
             QuickQuestion(iconName: "camera.fill", question: "How do I use the camera on the iPad?", title: "iPad Camera"),
             QuickQuestion(iconName: "wifi", question: "How do I connect to Wi-Fi?", title: "Wi-Fi Setup"),
-            QuickQuestion(iconName: "rocket.fil", question: "What are the quick start steps?", title: "Quick Start")
+            QuickQuestion(iconName: "airplane.up.forward.app.fill", question: "What are the quick start steps?", title: "Quick Start")
         ]
     }
 }

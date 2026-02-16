@@ -25,37 +25,28 @@ struct AskResponse: Codable {
     let answer: String
     let sources: [SourceReference]
     let session_id: String
-
-    var formattedString: String {
-        var formattedString: String = answer
-        let fileName = sources.map { "\($0.metadata.file_name)" }
-        if !fileName.isEmpty {
-            formattedString += "\n\nSources: \(fileName)"
-        }
-
-        let pageNumber = sources.compactMap { $0.metadata.page_number }
-        if !pageNumber.isEmpty {
-            var pageNumbers = "Found in page(s): "
-            pageNumbers += pageNumber.map { "\($0) " }.joined(separator: ", ")
-            formattedString += "\n\n\(pageNumbers)"
-        }
-
-        return formattedString
-    }
 }
 
-struct SourceReference: Codable {
+struct SourceReference: Codable, Hashable {
     let text: String
     let source_type: String
     let metadata: MetaData
     let relevance_score: Double
     
     var score: Double {
-        relevance_score * 100
+        relevance_score
+    }
+
+    var page: Int? {
+        metadata.page_number
+    }
+
+    var fileName: String {
+        metadata.file_name
     }
 }
 
-struct MetaData: Codable {
+struct MetaData: Codable, Hashable {
     let source_type: String
     let file_name: String
     let segment_index: Int?

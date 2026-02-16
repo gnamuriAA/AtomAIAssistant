@@ -142,7 +142,7 @@ final class ChatViewModel: ObservableObject {
             if isOnline {
                 do {
                     let askResponse = try await answerWithAPI(question: query, sessionId: sessionID.uuidString)
-                    messages.append(.init(role: .assistant, text: askResponse.formattedString))
+                    messages.append(.init(role: .assistant, text: askResponse.answer, source: askResponse.sources))
                     isAnswering = false
                 } catch {
                     messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
@@ -239,7 +239,7 @@ struct ChatMessage: Identifiable, Hashable {
     let role: ChatRole
     let text: String
     let date: Date = Date()
-
+    var source: [SourceReference]?
     var markDownString: LocalizedStringKey {
         return LocalizedStringKey(text)
     }
