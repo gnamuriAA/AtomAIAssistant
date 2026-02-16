@@ -13,6 +13,7 @@ struct ChatHolderView: View {
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var embedProgress: GlobalEmbeddingProgressViewModel
     @FocusState private var sendIsFocused: Bool
+    @State private var scrollID = UUID()
     
     var body: some View {
         VStack(spacing: .zero) {
@@ -46,10 +47,21 @@ struct ChatHolderView: View {
                         ChatBubble(message: message)
                             .id(message.id)
                     }
+                    if viewModel.isAnswering {
+                        HStack {
+                            TypingIndicatorView()
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .id(scrollID)
+                    }
                 }
                 .padding(.vertical, 8)
             }
             .onChange(of: viewModel.messages.count) { oldValue, newValue in
+                scrollToBottom(proxy)
+            }
+            .onChange(of: viewModel.isAnswering) { oldValue, newValue in
                 scrollToBottom(proxy)
             }
         }
@@ -119,13 +131,12 @@ struct ChatHolderView: View {
             .padding(.vertical, 6)
             .padding(.leading, 6)
         }
+        .disabled(viewModel.isAnswering)
     }
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
-        DispatchQueue.main.async {
-            if let last = viewModel.messages.last {
-                proxy.scrollTo(last.id, anchor: .bottom)
-            }
+        withAnimation(.easeOut(duration: 0.25)) {
+            proxy.scrollTo(viewModel.messages.last?.id ?? scrollID, anchor: .bottom)
         }
     }
 
