@@ -192,8 +192,9 @@ private extension ChatViewModel {
                         return "Failed to load answer vectors chunks from local store. Please try again later."
                     }
                     let filteredRecords = rawResults.filter { $0.finalScore >= 0.8 }.sorted(by: { $0.finalScore > $1.finalScore })
-                    let textToReturn = filteredRecords.map { $0.record.embeddingText }.joined(separator: "\n\n")
-                    return textToReturn.isEmpty ? "No relevant answers found." : textToReturn
+                    let textToReturn = filteredRecords.map { $0.record.embeddingText }.joined(separator: "\n")
+                    let normalizedText = NormaliseText.normalizeText(textToReturn)
+                    return textToReturn.isEmpty ? "No relevant answers found." : normalizedText
                 }
             }
         }
