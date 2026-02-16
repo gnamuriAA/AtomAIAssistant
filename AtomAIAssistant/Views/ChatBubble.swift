@@ -22,7 +22,7 @@ struct ChatBubble: View {
                 .foregroundStyle(isUser ? .white : .primary)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(isUser ? Color.accentColor : Color(.secondarySystemBackground))
+                        .fill(message.role.bubbleColor)
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)

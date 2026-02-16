@@ -114,18 +114,19 @@ final class ChatViewModel: ObservableObject {
         messages.append(.init(role: .user, text: query))
         if let launchCommand = parseLaunchCommand(query), appsToLaunch.keys.contains(launchCommand.appName.lowercased()) {
             if let string = appsToLaunch[launchCommand.appName.lowercased()], let url = URL(string: "\(string.bundleId)://\((launchCommand.rawParams == nil) ? "" : (string.paramKey + launchCommand.rawParams!))") {
-                var messageText = "Launching \(launchCommand.appName)"
+                var messageText = "Launching **\(launchCommand.appName.capitalized)**"
                 if let params = launchCommand.rawParams {
-                    messageText += " with params: \(params)"
+                    messageText += " with params: **\(params)**"
                 }
                 messages.append(.init(role: .system, text: messageText))
                 UIApplication.shared.open(url) { status in
                     if status {
-                        var updatedMessageText = "Successfully launched application \(launchCommand.appName)"
+                        var updatedMessageText = "Successfully launched **\(launchCommand.appName.capitalized)** application "
                         if let params = launchCommand.rawParams {
-                            updatedMessageText += " with params: \(params)"
+                            updatedMessageText += " with params: **\(params)**"
                         }
                         DispatchQueue.main.async {
+                            self.messages.removeLast()
                             self.messages.append(.init(role: .system, text: updatedMessageText))
                         }
                     }
@@ -234,6 +235,17 @@ struct ChatMessage: Identifiable, Hashable {
 
     var markDownString: LocalizedStringKey {
         return LocalizedStringKey(text)
+    }
+}
+
+
+extension ChatRole {
+    var bubbleColor: Color {
+        switch self {
+        case .user:      return Color("UserBubble")
+        case .assistant: return Color("AssistantBubble")
+        case .system:    return Color("SystemBubble")
+        }
     }
 }
 
