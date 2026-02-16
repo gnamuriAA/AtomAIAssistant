@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import Combine
 import Network
+import UIKit
 
 final class ChatViewModel: ObservableObject {
     private var ragGenerationModel: RAGGenerationModel = RAGGenerationModel(pdfs: AvailableMarkdown.allCases)
@@ -32,12 +33,17 @@ final class ChatViewModel: ObservableObject {
     private let monitor = NetworkMonitor.shared
     private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: azureAPIKey)
     private let apiClient: AtomAIAssistantClient
+    let quickQuestionsModel: QuickQuestionModel
+    @Published var quickQuestions: [String] = []
+    private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "https://osp.maverick.aa.com/usersafeoiladd/")]
 
     init() {
         embeddingClient = AppleEmbeddingClient()
         azureChatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
         chatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
         apiClient = AtomAIAssistantClient()
+        quickQuestionsModel = QuickQuestionModel()
+
         monitor.$isConnected
             .combineLatest(monitor.$interfaceType)
             .receive(on: DispatchQueue.main)
@@ -45,7 +51,9 @@ final class ChatViewModel: ObservableObject {
                 guard let self else { return }
                 self.isOnline = isConnected
                 self.currentInterface = iface
-                
+                quickQuestionsModel.isOnline = isConnected
+                quickQuestions = quickQuestionsModel.questions
+
                 if isConnected {
                     let ifaceName = iface.map(String.init(describing:)) ?? "network"
                     self.statusText = "Connected via \(ifaceName)"
@@ -103,17 +111,45 @@ final class ChatViewModel: ObservableObject {
 
     func answer(for query: String) async {
         messages.append(.init(role: .user, text: query))
-        if isOnline {
-            do {
-                let askResponse = try await answerWithAPI(question: query, sessionId: sessionID.uuidString)
-                messages.append(.init(role: .assistant, text: askResponse.formattedString))
-            } catch {
-                messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
+        if let launchCommand = parseLaunchCommand(query), appsToLaunch.keys.contains(launchCommand.appName.lowercased()) {
+            if let string = appsToLaunch[launchCommand.appName.lowercased()], let url = URL(string: "\(string.bundleId)://\((launchCommand.rawParams == nil) ? "" : (string.paramKey + launchCommand.rawParams!))") {
+                var messageText = "Launching \(launchCommand.appName)"
+                if let params = launchCommand.rawParams {
+                    messageText += " with params: \(params)"
+                }
+                messages.append(.init(role: .system, text: messageText))
+                UIApplication.shared.open(url) { status in
+                    if status {
+                        var updatedMessageText = "Successfully launched application \(launchCommand.appName)"
+                        if let params = launchCommand.rawParams {
+                            updatedMessageText += " with params: \(params)"
+                        }
+                        DispatchQueue.main.async {
+                            self.messages.append(.init(role: .system, text: updatedMessageText))
+                        }
+                    }
+                }
+            } else {
+                messages.append(.init(role: .system, text: "Cannot Launching \(launchCommand.appName) with params: \(launchCommand.rawParams ?? "none") as this is not configured."))
             }
         } else {
-            let response = await answerFromLocal(for: query, history: messages.map { $0.toChatTurn() })
-            messages.append(.init(role: .assistant, text: response))
+            if isOnline {
+                do {
+                    let askResponse = try await answerWithAPI(question: query, sessionId: sessionID.uuidString)
+                    messages.append(.init(role: .assistant, text: askResponse.formattedString))
+                } catch {
+                    messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
+                }
+            } else {
+                let response = await answerFromLocal(for: query, history: messages.map { $0.toChatTurn() })
+                messages.append(.init(role: .assistant, text: response))
+            }
         }
+    }
+
+    private func doesQuestionToLaunchApp(question: String) -> [String] {
+        let syncedApps = Set(question.components(separatedBy: " ")).union(appsToLaunch.keys)
+        return Array(syncedApps)
     }
 }
 
@@ -154,6 +190,35 @@ private extension ChatViewModel {
         }
         return "Failed to load answer from both Apple Intelligence and Azure OpenAI. Please try again later."
     }
+
+    private func parseLaunchCommand(_ input: String) -> LaunchCommand? {
+        // (?i) -> case-insensitive
+        // 1st capture: app name (quoted or unquoted)
+        // 2nd capture: params rest (optional)
+        let pattern = #"(?i)^\s*launch\s+(?:"([^"]+)"|([^\s]+(?:\s+[^\s]+)*?))\s*(?:\s+with\s+(.*))?\s*$"#
+        // Explanation:
+        // - ^\s*launch\s+      : starts with "launch"
+        // - (?:"([^"]+)"|...)  : either "quoted app name" or multi-word unquoted
+        // - (?:\s+with\s+(.*))?: optional "with <params...>" capturing the rest
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+        let range = NSRange(input.startIndex..<input.endIndex, in: input)
+
+        guard let match = regex.firstMatch(in: input, options: [], range: range) else { return nil }
+
+        func group(_ i: Int) -> String? {
+            let r = match.range(at: i)
+            guard r.location != NSNotFound, let rr = Range(r, in: input) else { return nil }
+            return String(input[rr]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        // Either group 1 (quoted) or 2 (unquoted multi-word)
+        let appName = group(1) ?? group(2)
+        let params = group(3)
+
+        guard let app = appName, !app.isEmpty else { return nil }
+        return LaunchCommand(appName: app, rawParams: params?.isEmpty == true ? nil : params)
+    }
 }
 
 enum ChatRole: String, CaseIterable {
@@ -175,3 +240,7 @@ extension ChatMessage {
 
 let azureAPIKey = ""
 
+struct LaunchCommand {
+    let appName: String
+    let rawParams: String?
+}
