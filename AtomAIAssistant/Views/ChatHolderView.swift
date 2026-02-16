@@ -10,10 +10,6 @@ internal import UniformTypeIdentifiers
 
 struct ChatHolderView: View {
     @State private var input: String = ""
-    @Binding var messages: [ChatMessage]
-
-    let qaService: QAService
-    let chatClient: ChatProvider
     @ObservedObject var viewModel: ChatViewModel
     @ObservedObject var embedProgress: GlobalEmbeddingProgressViewModel
     @FocusState private var sendIsFocused: Bool
@@ -46,14 +42,14 @@ struct ChatHolderView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(messages) { message in
+                    ForEach(viewModel.messages) { message in
                         ChatBubble(message: message)
                             .id(message.id)
                     }
                 }
                 .padding(.vertical, 8)
             }
-            .onChange(of: messages.count) { oldValue, newValue in
+            .onChange(of: viewModel.messages.count) { oldValue, newValue in
                 scrollToBottom(proxy)
             }
         }
@@ -95,7 +91,7 @@ struct ChatHolderView: View {
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         DispatchQueue.main.async {
-            if let last = messages.last {
+            if let last = viewModel.messages.last {
                 proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
@@ -107,14 +103,8 @@ struct ChatHolderView: View {
         guard !question.isEmpty else { return }
         
         input = ""
-        
-        messages.append(.init(role: .user, text: question))
-        
         Task {
-            let response = await viewModel.answer(for: question, history: messages.map{ $0.toChatTurn() })
-            await MainActor.run {
-                messages.append(.init(role: .assistant, text: response))
-            }
+            await viewModel.answer(for: question)
         }
     }
 }

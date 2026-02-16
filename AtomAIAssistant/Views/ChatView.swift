@@ -13,7 +13,7 @@ struct ChatView: View {
     
     var body: some View {
         VStack {
-            if model.hasUpdatedQAService, let qaService = model.qaService {
+            if model.hasUpdatedQAService, model.qaService != nil {
                 if embedProgress.isVisible, let progress = embedProgress.progress {
                     Group {
                         Spacer()
@@ -24,7 +24,7 @@ struct ChatView: View {
                 } else {
                     header
 
-                    ChatHolderView(messages: $model.messages, qaService: qaService, chatClient: model.chatProvider, viewModel: model, embedProgress: embedProgress)
+                    ChatHolderView(viewModel: model, embedProgress: embedProgress)
                         .environmentObject(embedProgress)
                 }
             } else {

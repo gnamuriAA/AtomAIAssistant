@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import Combine
+import Network
 
 final class ChatViewModel: ObservableObject {
     private var ragGenerationModel: RAGGenerationModel = RAGGenerationModel(pdfs: AvailableMarkdown.allCases)
@@ -23,13 +24,38 @@ final class ChatViewModel: ObservableObject {
     @Published var showImporter = false
     @Published var selectedPDF: URL?
     @Published var isUploading: Bool = false
-    
+    private var sessionID = UUID()
+    @Published private(set) var isOnline: Bool = true
+    @Published private(set) var currentInterface: NWInterface.InterfaceType?
+    @Published private(set) var statusText: String = "Checking…"
+    private var cancellables = Set<AnyCancellable>()
+    private let monitor = NetworkMonitor.shared
     private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: azureAPIKey)
+    private let apiClient: AtomAIAssistantClient
 
     init() {
         embeddingClient = AppleEmbeddingClient()
         azureChatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
         chatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
+        apiClient = AtomAIAssistantClient()
+        monitor.$isConnected
+            .combineLatest(monitor.$interfaceType)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isConnected, iface in
+                guard let self else { return }
+                self.isOnline = isConnected
+                self.currentInterface = iface
+                
+                if isConnected {
+                    let ifaceName = iface.map(String.init(describing:)) ?? "network"
+                    self.statusText = "Connected via \(ifaceName)"
+                } else {
+                    self.statusText = "Offline"
+                }
+            }
+            .store(in: &cancellables)
+        
+        monitor.startMonitoring()
     }
 
     func configureContext(modelContext: ModelContext) {
@@ -75,7 +101,30 @@ final class ChatViewModel: ObservableObject {
         }
     }
 
-    func answer(for query: String, history: [ChatTurn]) async  -> String {
+    func answer(for query: String) async {
+        messages.append(.init(role: .user, text: query))
+        if isOnline {
+            do {
+                let askResponse = try await answerWithAPI(question: query, sessionId: sessionID.uuidString)
+                messages.append(.init(role: .assistant, text: askResponse.formattedString))
+            } catch {
+                messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
+            }
+        } else {
+            let response = await answerFromLocal(for: query, history: messages.map { $0.toChatTurn() })
+            messages.append(.init(role: .assistant, text: response))
+        }
+    }
+}
+
+private extension ChatViewModel {
+    func answerWithAPI(question: String, sessionId: String) async throws -> AskResponse {
+        return try await apiClient.ask(query: question, sessionId: sessionId)
+    }
+}
+
+private extension ChatViewModel {
+    func answerFromLocal(for query: String, history: [ChatTurn]) async -> String {
         guard let qaService else {
             return "QA Service not ready yet. Please wait a moment and try again."
         }
@@ -125,3 +174,4 @@ extension ChatMessage {
 }
 
 let azureAPIKey = ""
+
