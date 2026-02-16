@@ -10,6 +10,7 @@ import SwiftData
 import Combine
 import Network
 import UIKit
+import SwiftUI
 
 final class ChatViewModel: ObservableObject {
     private var ragGenerationModel: RAGGenerationModel = RAGGenerationModel(pdfs: AvailableMarkdown.allCases)
@@ -230,6 +231,10 @@ struct ChatMessage: Identifiable, Hashable {
     let role: ChatRole
     let text: String
     let date: Date = Date()
+
+    var markDownString: LocalizedStringKey {
+        return LocalizedStringKey(text)
+    }
 }
 
 extension ChatMessage {

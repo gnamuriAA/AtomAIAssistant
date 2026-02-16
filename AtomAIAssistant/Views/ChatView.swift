@@ -31,12 +31,16 @@ struct ChatView: View {
                 Text("Failed to load chat service")
             }
         }
+        .background(
+            model.isOnline ? Color(.systemGroupedBackground) : Color.red.opacity(0.1)
+        )
     }
-}
 
-private var header: some View {
-    VStack {
-        Text("Atom AI Assistant")
-            .font(.largeTitle)
+    private var header: some View {
+        VStack {
+            Text("Atom AI Assistant")
+                .font(.largeTitle)
+        }
     }
+
 }

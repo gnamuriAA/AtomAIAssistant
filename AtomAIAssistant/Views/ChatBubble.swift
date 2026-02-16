@@ -15,7 +15,7 @@ struct ChatBubble: View {
         HStack(alignment: .bottom) {
             if isUser {  Spacer(minLength: 40) }
 
-            Text(message.text)
+            Text(message.markDownString)
                 .font(.body)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 12)
