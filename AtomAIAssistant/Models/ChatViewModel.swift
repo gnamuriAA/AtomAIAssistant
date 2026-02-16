@@ -37,7 +37,7 @@ final class ChatViewModel: ObservableObject {
     private let apiClient: AtomAIAssistantClient
     let quickQuestionsModel: QuickQuestionModel
     @Published var quickQuestions: [QuickQuestion] = []
-    private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "https://osp.maverick.aa.com/usersafeoiladd/")]
+    private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "ospappurl=https://osp.maverick.aa.com/usersafeoiladd/")]
 
     init() {
         embeddingClient = AppleEmbeddingClient()
