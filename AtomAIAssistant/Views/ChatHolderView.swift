@@ -126,7 +126,7 @@ struct ChatHolderView: View {
                                 .resizable()
                                 .frame(width: 30, height: 30)
                         }
-                        .disabled(viewModel.isAnswering || viewModel.isListening)
+                        .disabled(viewModel.isAnswering || viewModel.isListening || viewModel.isSpeaking)
 
                         Button {
                             send()
@@ -141,7 +141,7 @@ struct ChatHolderView: View {
                                     Capsule(style: .circular)
                                 )
                         }
-                        .disabled(viewModel.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnswering)
+                        .disabled(viewModel.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnswering || viewModel.isSpeaking)
                     }
                 }
             }
