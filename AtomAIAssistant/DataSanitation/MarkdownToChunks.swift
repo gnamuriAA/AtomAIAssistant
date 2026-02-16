@@ -60,8 +60,8 @@ final class MarkdownToChunks {
             
             // page markers
             if let pageNumber = parsePageNumberMarker(line) {
+                currentPage = pageNumber + 1
                 flushParagraphBuffer()
-                currentPage = pageNumber
                 i += 1
                 continue
             }

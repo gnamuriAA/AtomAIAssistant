@@ -24,7 +24,8 @@ final class QAService {
         // 3. Build Prompt
         let system = PromptBuilder.systemPrompt()
         let user = PromptBuilder.userPrompt(question: question, chunks: top, history: history)
-        
+        let textWithPageNumber = top.map { "\($0.record.embeddingText) (Source: \($0.record.docName), Page: \($0.record.pageNumber))" }.joined(separator: "\n\n")
+        print("Found text is: \n\(textWithPageNumber)")
         // 4. LLM Answer
         let answer = try await chatClient.chat(system: system, user: user)
         return (answer.trimmingCharacters(in: .whitespacesAndNewlines), top.map { $0.record.embeddingText }.joined(separator: "\n\n"))
