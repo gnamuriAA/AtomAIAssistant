@@ -6,10 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		AF41AEE72F39C28200943369 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = AF41AEE62F39C28200943369 /* Markdown */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		AF41ADC72F3846BD00943369 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -56,7 +52,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AF41AEE72F39C28200943369 /* Markdown in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,7 +112,6 @@
 			);
 			name = AtomAIAssistant;
 			packageProductDependencies = (
-				AF41AEE62F39C28200943369 /* Markdown */,
 			);
 			productName = AtomAIAssistant;
 			productReference = AF41ADB92F3846BA00943369 /* AtomAIAssistant.app */;
@@ -202,7 +196,6 @@
 			mainGroup = AF41ADB02F3846BA00943369;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				AF41AEE52F39C28200943369 /* XCRemoteSwiftPackageReference "swift-markdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AF41ADBA2F3846BA00943369 /* Products */;
@@ -597,25 +590,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		AF41AEE52F39C28200943369 /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/swiftlang/swift-markdown";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.7.3;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		AF41AEE62F39C28200943369 /* Markdown */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = AF41AEE52F39C28200943369 /* XCRemoteSwiftPackageReference "swift-markdown" */;
-			productName = Markdown;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AF41ADB12F3846BA00943369 /* Project object */;
 }
