@@ -17,8 +17,6 @@ final class ChatViewModel: ObservableObject {
     private(set) var qaService: QAService?
     private var modelContext: ModelContext?
     private let embeddingClient: EmbeddingProvider
-    private(set) var chatProvider: ChatProvider
-    private(set) var azureChatProvider: ChatProvider
     @Published var messages: [ChatMessage] = [
         .init(role: .assistant, text: "Ask me anything about the uploaded documents!")
     ]
@@ -43,14 +41,13 @@ final class ChatViewModel: ObservableObject {
     @Published private(set) var isListening: Bool = false
     @Published private(set) var isStoppedDueToSilence = false
     @Published private(set) var isSpeaking: Bool = false
+    private var answerGenerationModel: LLGenerationModel?
 
     init() {
         embeddingClient = AppleEmbeddingClient()
-        azureChatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
-        chatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
         apiClient = AtomAIAssistantClient()
         quickQuestionsModel = QuickQuestionModel()
-        
+    
         speechRecognizer.$transcript
             .receive(on: DispatchQueue.main)
             .sink { [weak self] value in
@@ -123,6 +120,9 @@ final class ChatViewModel: ObservableObject {
     func configureContext(modelContext: ModelContext) {
         qaService = QAService(modelContext: modelContext, embeddingsClient: embeddingClient)
         ragGenerationModel.configureContext(context: modelContext)
+        if let qaService {
+            answerGenerationModel = LLGenerationModel(qaService: qaService)
+        }
         self.modelContext = modelContext
         ragGenerationModel = RAGGenerationModel(pdfs: AvailableMarkdown.allCases, multiPDFEmbeddingPipeline: MultiPDFEmbeddingPipeLine(chunker: PDFMarkdownChunkingProvider(), indexer: ChunkEmbeddingIndexer(client: embeddingClient, modelContext: modelContext)))
         hasUpdatedQAService = true
@@ -203,7 +203,7 @@ final class ChatViewModel: ObservableObject {
                     isAnswering = false
                 }
             } else {
-                let response = await answerFromLocal(for: query, history: messages.map { $0.toChatTurn() })
+                let response = await answerGenerationModel?.answerFromLocal(for: query, history: messages.map { $0.toChatTurn() }) ?? ""
                 messages.append(.init(role: .assistant, text: response))
                 isAnswering = false
             }
@@ -223,38 +223,6 @@ private extension ChatViewModel {
 }
 
 private extension ChatViewModel {
-    func answerFromLocal(for query: String, history: [ChatTurn]) async -> String {
-        guard let qaService else {
-            return "QA Service not ready yet. Please wait a moment and try again."
-        }
-        var triedWithAppleLLM = true
-        do {
-            var response = try await qaService.answer(query, chatClient: chatProvider, history: history)
-            if response.llmResponse == "Apple Intelligence is not available on this device or region." {
-                triedWithAppleLLM = false
-                response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
-                
-            }
-            return response.llmResponse
-        } catch {
-            if triedWithAppleLLM {
-                do {
-                    let response = try  await qaService.answer(query, chatClient: azureChatProvider, history: history)
-                    return response.llmResponse
-                } catch {
-                    guard let rawResults = try? await qaService.getRawAnswers(question: query) else {
-                        return "Failed to load answer vectors chunks from local store. Please try again later."
-                    }
-                    let filteredRecords = rawResults.filter { $0.finalScore >= 0.88 }.sorted(by: { $0.finalScore > $1.finalScore })
-                    let textToReturn = filteredRecords.map { $0.record.embeddingText }.joined(separator: "\n")
-                    let normalizedText = NormaliseText.normalizeText(textToReturn)
-                    return textToReturn.isEmpty ? "No relevant answers found." : normalizedText
-                }
-            }
-        }
-        return "Failed to load answer from both Apple Intelligence and Azure OpenAI. Please try again later."
-    }
-
     private func parseLaunchCommand(_ input: String) -> LaunchCommand? {
         // (?i) -> case-insensitive
         // 1st capture: app name (quoted or unquoted)
