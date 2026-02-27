@@ -37,7 +37,10 @@ struct ChatView: View {
     }
 
     private var header: some View {
-        VStack {
+        HStack {
+            Image("atom")
+                .resizable()
+                .frame(width: 40, height: 40)
             Text("Atom AI Assistant")
                 .font(.largeTitle)
         }

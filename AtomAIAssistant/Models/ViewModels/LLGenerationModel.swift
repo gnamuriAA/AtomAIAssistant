@@ -15,6 +15,7 @@ final class LLGenerationModel {
     init(qaService: QAService) {
         appleChatProvider = AppleLLMClient(instruction: PromptBuilder.systemPrompt())
         azureChatProvider = AzureLLMClient(endpoint: URL(string: "https://aa-genai-train-foundry.cognitiveservices.azure.com/")!, deployment: "gpt-4o", apiKey: azureAPIKey, apiVersion: "2024-12-01-preview")
+        self.qaService = qaService
     }
 
     func answerFromLocal(for query: String, history: [ChatTurn]) async -> String {
