@@ -15,11 +15,18 @@ final class SpeechRecognizer: NSObject, ObservableObject {
     private var recognitionTask: SFSpeechRecognitionTask?
     private var synthesizer = AVSpeechSynthesizer()
     
-    @Published var isProcessing: Bool = true
+    // When the audio engine is running and listening for speech input
     @Published var isListening: Bool = false
+    
+    // Produced output from the speech recognizer, updated in real-time as the user speaks
     @Published var transcript: String = ""
+    
+    // When the user actually speaks and the synthesizer is producing speech output
     @Published var isSpeaking: Bool = false
+    
     @Published var errorForAudioSession: Error?
+    
+    // When user stopped speaking so we stopped the audio engine due to silence, but we are still in the listening state
     @Published var isStoppedDueToSilence = false
     
     private var silenceTimer: Timer?
@@ -166,7 +173,6 @@ extension SpeechRecognizer: SFSpeechRecognizerDelegate {
 extension SpeechRecognizer: AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         DispatchQueue.main.async {
-            self.isProcessing = false
             self.isSpeaking = false
         }
     }
