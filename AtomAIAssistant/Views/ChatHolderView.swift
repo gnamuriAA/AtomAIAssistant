@@ -188,3 +188,7 @@ struct ChatHolderView: View {
         }
     }
 }
+
+#Preview {
+    ChatHolderView(viewModel: ChatViewModel(), embedProgress: GlobalEmbeddingProgressViewModel())
+}

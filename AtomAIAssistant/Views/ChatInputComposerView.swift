@@ -1,5 +1,5 @@
 //
-//  MessageInputComposerView.swift
+//  ChatInputComposerView.swift
 //  AtomAIAssistant
 //
 //  Created by Gowtham, Namuru on 01/03/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct MessageInputComposerView: View {
+struct ChatInputComposerView: View {
     enum TrailingMode {
         case compact, expanded, recording
     }
@@ -62,7 +62,7 @@ struct MessageInputComposerView: View {
 }
 
 // MARK: - Subview
-private extension MessageInputComposerView {
+private extension ChatInputComposerView {
     var mainComposerBar: some View {
         HStack(spacing: 12) {
             // Left: +
@@ -242,5 +242,5 @@ fileprivate struct CircleButton: View {
 }
 
 #Preview {
-    MessageInputComposerView(onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
+    ChatInputComposerView(onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
 }
