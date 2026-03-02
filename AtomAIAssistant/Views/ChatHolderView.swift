@@ -35,11 +35,8 @@ struct ChatHolderView: View {
                 // TODO: - On send voice recording
                 print("on Send voice button click ")
             } onInlineMic: {
-                //TODO: - On inline mic button tapped
-                print("On inline Mic clicked ")
                 viewModel.startListening()
             }
-
         }
         .fileImporter(isPresented: $viewModel.showImporter, allowedContentTypes: [.pdf], allowsMultipleSelection: false) { result in
             Task { @MainActor in
@@ -69,6 +66,17 @@ struct ChatHolderView: View {
                         HStack {
                             TypingIndicatorView()
                             Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .id(scrollID)
+                    }
+                    
+                    if viewModel.isListening {
+                        HStack {
+                            Spacer()
+                            Text(viewModel.input)
+                                .foregroundStyle(.secondary)
+                                .italic()
                         }
                         .padding(.horizontal, 12)
                         .id(scrollID)
