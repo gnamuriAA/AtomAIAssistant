@@ -30,20 +30,27 @@ final class ChatViewModel: ObservableObject {
     @Published private(set) var currentInterface: NWInterface.InterfaceType?
     @Published private(set) var statusText: String = "Checking…"
     private var cancellables = Set<AnyCancellable>()
+    private var speechCancellables = Set<AnyCancellable>()
     private let monitor = NetworkMonitor.shared
     private let azureClient = AzureDocumentIntelligenceClient(endpoint: "https://aa-genai-train-foundry.cognitiveservices.azure.com/", apiKey: azureAPIKey)
     private let apiClient: AtomAIAssistantClient
     let quickQuestionsModel: QuickQuestionModel
     @Published var quickQuestions: [QuickQuestion] = []
     private let appsToLaunch: [String: (bundleId: String, paramKey: String)] = ["safe": ("aa-techops-safe", "AC="), "atom": ("com.aa.techopsmobility.atom", ""), "osp": ("aa-techops-osp", "ospappurl=https://osp.maverick.aa.com/usersafeoiladd/")]
-    private var speechRecognizer = SpeechRecognizer()
+    private var speechRecognizer: SpeechRecognizer?
     @Published var input: String = ""
     var isListening: Bool {
-        speechRecognizer.isListening
+        guard let speechRecognizer else {
+            return false
+        }
+        return speechRecognizer.isListening
     }
     @Published var isStoppedDueToSilence: Bool = false
     var isSpeaking: Bool {
-        speechRecognizer.isSpeaking
+        guard let speechRecognizer else {
+            return false
+        }
+        return speechRecognizer.isSpeaking
     }
 
     private var answerGenerationModel: LLGenerationModel?
@@ -53,23 +60,6 @@ final class ChatViewModel: ObservableObject {
         embeddingClient = AppleEmbeddingClient()
         apiClient = AtomAIAssistantClient()
         quickQuestionsModel = QuickQuestionModel()
-        
-        speechRecognizer.$transcript
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] value in
-                guard let self, !value.isEmpty, !self.isSpeaking else {
-                    return
-                }
-                self.input = value
-            }
-            .store(in: &cancellables)
-
-        speechRecognizer.$isStoppedDueToSilence
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] value in
-                self?.isStoppedDueToSilence = value
-            }
-            .store(in: &cancellables)
         
         monitor.$isConnected
             .combineLatest(monitor.$interfaceType)
@@ -94,25 +84,68 @@ final class ChatViewModel: ObservableObject {
     }
 
     func startListening() {
-        speechRecognizer.startRecording()
+        initializeSpeechRecognizerr()
+        if let speechRecognizer {
+            speechRecognizer.startRecording()
+        }
+        startObservingValues()
     }
 
     func stopListening() {
-        speechRecognizer.stopRecording()
+        speechRecognizer?.stopRecording()
+        stopObservingValues()
+        speechRecognizer = nil
     }
     
     func startSpeaking(text: String) {
-        speechRecognizer.speak(text: text)
+        initializeSpeechRecognizerr()
+        speechRecognizer?.speak(text: text)
     }
 
     func stopSpeaking() {
-        speechRecognizer.stopSpeaking()
+        speechRecognizer?.stopSpeaking()
         shouldSpeakOnAnswer = false
     }
 
     func startListeningAndContinueToSpeak() {
-        speechRecognizer.startRecording(shouldStopOnUserSilence: false)
+        initializeSpeechRecognizerr()
+        speechRecognizer?.startRecording(shouldStopOnUserSilence: false)
         shouldSpeakOnAnswer = true
+        startObservingValues()
+    }
+
+    private func initializeSpeechRecognizerr() {
+        guard speechRecognizer == nil else {
+            return
+        }
+        speechRecognizer = SpeechRecognizer()
+    }
+
+    private func startObservingValues() {
+        guard let speechRecognizer else {
+            return
+        }
+
+        speechRecognizer.$transcript
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                guard let self, !value.isEmpty, !self.isSpeaking else {
+                    return
+                }
+                self.input = value
+            }
+            .store(in: &speechCancellables)
+
+        speechRecognizer.$isStoppedDueToSilence
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                self?.isStoppedDueToSilence = value
+            }
+            .store(in: &speechCancellables)
+    }
+
+    private func stopObservingValues() {
+        speechCancellables.forEach { $0.cancel() }
     }
     
     func configureContext(modelContext: ModelContext) {
@@ -187,7 +220,7 @@ final class ChatViewModel: ObservableObject {
                     isAnswering = false
                     if shouldSpeakOnAnswer {
                         startSpeaking(text: "\(askResponse.answer)")
-                        speechRecognizer.transcript = ""
+                        speechRecognizer?.transcript = ""
                     }
                 } catch {
                     messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
