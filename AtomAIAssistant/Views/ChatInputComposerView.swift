@@ -16,6 +16,7 @@ public struct ChatInputComposerView: View {
     private var showAvatarInExpanded = false
     
     @Binding var text: String
+    @Binding var isStoppedDueToSilence: Bool
     var onSendText: ((String) -> Void)
     var onTapPlus: () -> Void
     var onStartVoice: () -> Void
@@ -25,8 +26,9 @@ public struct ChatInputComposerView: View {
     @State private var phase: CGFloat = 0.0
     @State private var animateWave: Bool = false
 
-    public init(text: Binding<String>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopVoice: @escaping () -> Void, onSendVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
+    public init(text: Binding<String>, isStoppedDueToSilence: Binding<Bool>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopVoice: @escaping () -> Void, onSendVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
         self._text = text
+        self._isStoppedDueToSilence = isStoppedDueToSilence
         self.onSendText = onSendText
         self.onTapPlus = onTapPlus
         self.onStartVoice = onStartVoice
@@ -66,9 +68,11 @@ public struct ChatInputComposerView: View {
         .animation(.spring(response: 0.28, dampingFraction: 0.9), value: mode)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
-        .onDisappear {
-//            stopMeter()
-        }
+        .onChange(of: isStoppedDueToSilence, { oldValue, newValue in
+            if isStoppedDueToSilence {
+                withAnimation { mode = .compact }
+            }
+        })
     }
 }
 
@@ -260,5 +264,5 @@ fileprivate struct CircleButton: View {
 }
 
 #Preview {
-    ChatInputComposerView(text: .constant(""), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
+    ChatInputComposerView(text: .constant(""), isStoppedDueToSilence: .constant(false), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
 }

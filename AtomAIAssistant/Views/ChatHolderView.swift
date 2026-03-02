@@ -20,7 +20,7 @@ struct ChatHolderView: View {
             
             Divider()
             
-            ChatInputComposerView(text: $viewModel.input) { textToSend in
+            ChatInputComposerView(text: $viewModel.input, isStoppedDueToSilence: $viewModel.isStoppedDueToSilence) { textToSend in
                 // TODO: - On send button triggred
                 print("on Text to send \(textToSend)")
             } onTapPlus: {

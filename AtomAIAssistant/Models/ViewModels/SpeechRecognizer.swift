@@ -102,6 +102,7 @@ final class SpeechRecognizer: NSObject, ObservableObject {
         silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTime, repeats: false, block: { _ in
             if !self.transcript.isEmpty {
                 self.stopRecording()
+                self.isStoppedDueToSilence = true
             } else {
                 if self.isSpeaking {
                     self.resetSilenceTimer()
@@ -146,7 +147,6 @@ final class SpeechRecognizer: NSObject, ObservableObject {
             stopRecording()
         }
         silenceTimer?.invalidate()
-        isStoppedDueToSilence = false
     }
     
     func stopSpeaking() {

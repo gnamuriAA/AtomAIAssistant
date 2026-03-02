@@ -41,9 +41,7 @@ final class ChatViewModel: ObservableObject {
     var isListening: Bool {
         speechRecognizer.isListening
     }
-    var isStoppedDueToSilence: Bool {
-        speechRecognizer.isStoppedDueToSilence
-    }
+    @Published var isStoppedDueToSilence: Bool = false
     var isSpeaking: Bool {
         speechRecognizer.isSpeaking
     }
@@ -62,6 +60,14 @@ final class ChatViewModel: ObservableObject {
                     return
                 }
                 self?.input = value
+            }
+            .store(in: &cancellables)
+
+        speechRecognizer.$isStoppedDueToSilence
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                self?.isStoppedDueToSilence = value
+                print("Is Stopped due to silence is called \(value)")
             }
             .store(in: &cancellables)
         
