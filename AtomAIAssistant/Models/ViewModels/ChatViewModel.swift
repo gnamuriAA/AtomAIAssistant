@@ -57,10 +57,10 @@ final class ChatViewModel: ObservableObject {
         speechRecognizer.$transcript
             .receive(on: DispatchQueue.main)
             .sink { [weak self] value in
-                guard !value.isEmpty else {
+                guard let self, !value.isEmpty, !self.isSpeaking else {
                     return
                 }
-                self?.input = value
+                self.input = value
             }
             .store(in: &cancellables)
 
