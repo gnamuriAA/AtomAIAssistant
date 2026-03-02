@@ -153,8 +153,6 @@ struct ChatHolderView: View {
                 .padding(.leading, 4)
                 .foregroundStyle(viewModel.isOnline ? Color(.systemBlue) : Color.red)
         }
-        .padding()
-        .background(Color(.systemBackground))
     }
 
     private var quickQuestions: some View {
