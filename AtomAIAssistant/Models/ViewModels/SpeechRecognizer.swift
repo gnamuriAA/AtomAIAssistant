@@ -31,16 +31,25 @@ final class SpeechRecognizer: NSObject, ObservableObject {
     
     private var silenceTimer: Timer?
     var silenceTime: CGFloat
-    
+    @Published var isMuted: Bool = false
+
     init(silenceTime: CGFloat = 4.0) {
         self.silenceTime = silenceTime
         super.init()
         speechRecognizer?.delegate = self
         synthesizer.delegate = self
     }
+
+    func updateSilence(_ time: CGFloat) {
+        self.silenceTime = time
+        startRecording()
+    }
+
+    var shouldStopOnUserSilence = true // For inline mic it will be true for waveform it will be false, as user can pause while speaking and continue after that, without losing the transcript so far.
     
-    func startRecording() {
-        self.transcript = ""
+    func startRecording(transcript: String = "", shouldStopOnUserSilence: Bool = true) {
+        self.transcript = transcript
+        self.shouldStopOnUserSilence = shouldStopOnUserSilence
         guard !audioEngine.isRunning, let speechRecognizer else { return }
         
         if recognitionTask != nil {
@@ -60,6 +69,7 @@ final class SpeechRecognizer: NSObject, ObservableObject {
         guard let recognitionRequest else { return }
         recognitionRequest.shouldReportPartialResults = true
         recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { result, error in
+            guard !self.isSpeaking else { return }
             if let result = result {
                 DispatchQueue.main.async {
                     self.transcript = result.bestTranscription.formattedString
@@ -75,10 +85,11 @@ final class SpeechRecognizer: NSObject, ObservableObject {
         
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, when in
-            self.recognitionRequest?.append(buffer)
+        if !isMuted {
+            inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, when in
+                self.recognitionRequest?.append(buffer)
+            }
         }
-        
         audioEngine.prepare()
         
         do {
@@ -101,7 +112,11 @@ final class SpeechRecognizer: NSObject, ObservableObject {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTime, repeats: false, block: { _ in
             if !self.transcript.isEmpty {
-                self.stopRecording()
+                if self.shouldStopOnUserSilence {
+                    self.stopRecording()
+                } else {
+                    self.resetSilenceTimer()
+                }
                 self.isStoppedDueToSilence = true
             } else {
                 if self.isSpeaking {
@@ -126,7 +141,24 @@ final class SpeechRecognizer: NSObject, ObservableObject {
             stopRecording()
         }
     }
-    
+
+    func mute() {
+        guard !isMuted else { return }
+        isMuted = true
+        audioEngine.inputNode.removeTap(onBus: 0)
+    }
+
+    func unmute() {
+        guard isMuted else { return }
+        isMuted = false
+        guard audioEngine.isRunning, let recognitionRequest else { return }
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, when in
+            self.recognitionRequest?.append(buffer)
+        }
+    }
+
     func stopRecording() {
         audioEngine.stop()
         recognitionRequest?.endAudio()
@@ -174,6 +206,9 @@ extension SpeechRecognizer: AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         DispatchQueue.main.async {
             self.isSpeaking = false
+            if !self.shouldStopOnUserSilence {
+                self.startRecording(shouldStopOnUserSilence: self.shouldStopOnUserSilence)
+            }
         }
     }
 }

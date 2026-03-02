@@ -21,19 +21,14 @@ struct ChatHolderView: View {
             Divider()
             
             ChatInputComposerView(text: $viewModel.input, isStoppedDueToSilence: $viewModel.isStoppedDueToSilence) { textToSend in
-                // TODO: - On send button triggred
-                print("on Text to send \(textToSend)")
+                send()
             } onTapPlus: {
                 viewModel.showImporter = true
             } onStartVoice: {
-                // TODO: - On start voice recording
-                print("on Start voice button click ")
+                viewModel.startListeningAndContinueToSpeak()
             } onStopVoice: {
-                // TODO: - On Stop voice recording
-                print("on Stop voice button click ")
-            } onSendVoice: {
-                // TODO: - On send voice recording
-                print("on Send voice button click ")
+                viewModel.stopListening()
+                viewModel.stopSpeaking()
             } onInlineMic: {
                 viewModel.startListening()
             }
@@ -94,91 +89,6 @@ struct ChatHolderView: View {
         .background(Color(.systemGroupedBackground))
         .onTapGesture {
             sendIsFocused = false
-        }
-    }
-
-    private var composer: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                quickQuestions
-
-                if viewModel.isListening {
-                    Button {
-                        viewModel.stopListening()
-                    } label: {
-                        Text("Stop listening")
-                        
-                        Image(systemName: "microphone.slash")
-                            .resizable()
-                            .frame(width: 15, height: 15)
-                            .foregroundColor(.blue)
-                            .foregroundColor(.red)
-                    }
-                }
-                if viewModel.isSpeaking {
-                    Button {
-                        viewModel.stopSpeaking()
-                    } label: {
-                        HStack {
-                            Text("Stop Speaking")
-
-                            Image(systemName: "microphone.slash")
-                                .resizable()
-                                .frame(width: 15, height: 15)
-                                .foregroundColor(.red)
-                        }
-                    }
-                }
-            }
-
-            HStack(spacing: 10) {
-                Button {
-                    viewModel.showImporter = true
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                }
-                if viewModel.isUploading {
-                    ProgressView("Uploading & saving the markdown..")
-                } else {
-                    TextField("Ask from PDFs...", text: $viewModel.input, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(1...4)
-                        .focused($sendIsFocused)
-                    HStack {
-                        Button {
-                            viewModel.startListening()
-                            sendIsFocused = false
-                        } label: {
-                            Image(systemName: "waveform.badge.microphone")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                        }
-                        .disabled(viewModel.isAnswering || viewModel.isListening || viewModel.isSpeaking)
-
-                        Button {
-                            send()
-                            sendIsFocused = false
-                        } label: {
-                            Text("Send")
-                                .foregroundStyle(.white)
-                                .font(.body.bold())
-                                .padding(.horizontal)
-                                .padding(.vertical, 6)
-                                .background(
-                                    Capsule(style: .circular)
-                                )
-                        }
-                        .disabled(viewModel.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.isAnswering || viewModel.isSpeaking)
-                    }
-                }
-            }
-            .padding(.top, 6)
-            
-            Text(viewModel.statusText)
-                .font(.footnote)
-                .bold()
-                .padding(.leading, 4)
-                .foregroundStyle(viewModel.isOnline ? Color(.systemBlue) : Color.red)
         }
     }
 

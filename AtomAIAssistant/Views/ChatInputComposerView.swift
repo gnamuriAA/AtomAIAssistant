@@ -21,19 +21,17 @@ public struct ChatInputComposerView: View {
     var onTapPlus: () -> Void
     var onStartVoice: () -> Void
     var onStopVoice: () -> Void
-    var onSendVoice: () -> Void
     var onInlineMic: () -> Void
     @State private var phase: CGFloat = 0.0
     @State private var animateWave: Bool = false
 
-    public init(text: Binding<String>, isStoppedDueToSilence: Binding<Bool>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopVoice: @escaping () -> Void, onSendVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
+    public init(text: Binding<String>, isStoppedDueToSilence: Binding<Bool>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
         self._text = text
         self._isStoppedDueToSilence = isStoppedDueToSilence
         self.onSendText = onSendText
         self.onTapPlus = onTapPlus
         self.onStartVoice = onStartVoice
         self.onStopVoice = onStopVoice
-        self.onSendVoice = onSendVoice
         self.onInlineMic = onInlineMic
     }
 
@@ -70,7 +68,13 @@ public struct ChatInputComposerView: View {
         .padding(.bottom, 8)
         .onChange(of: isStoppedDueToSilence, { oldValue, newValue in
             if isStoppedDueToSilence {
-                withAnimation { mode = .compact }
+                withAnimation {
+                    if mode == .recording {
+                        mode = .compact
+                    } else {
+                        sendIfNeeded()
+                    }
+                }
             }
         })
     }
@@ -172,7 +176,6 @@ private extension ChatInputComposerView {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation { mode = .compact }
                 onStopVoice()
-                // TODO: - Stop button action when inline mic is turned on and this will not read out the received messages.
             }
             
             LevelMeterPill(isAnimating: $animateWave)
@@ -211,13 +214,17 @@ private extension ChatInputComposerView {
         HStack(spacing: 12) {
             CircleButton(symbol: "mic.fill", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 40) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                // TODO: - This should be muting the from user side
-                onStartVoice()
+                // TODO: - This should be muting the from user side, if mode is expand then we need to mute
+                if mode == .expanded {
+                    // Mute
+                } else {
+                    onStartVoice()
+                }
             }
             CircleButton(symbol: "xmark", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 40) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation { mode = .compact }
-                // TODO: - close button
+                onStopVoice()
             }
         }
     }
@@ -232,7 +239,9 @@ private extension ChatInputComposerView {
         onSendText(trimmed)
         text.removeAll()
         withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
-            mode = .compact
+            if mode == .recording {
+                mode = .compact
+            }
         }
         isFocused = false
         UINotificationFeedbackGenerator().notificationOccurred(.success) // To vibrate the phone on send
@@ -264,5 +273,5 @@ fileprivate struct CircleButton: View {
 }
 
 #Preview {
-    ChatInputComposerView(text: .constant(""), isStoppedDueToSilence: .constant(false), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
+    ChatInputComposerView(text: .constant(""), isStoppedDueToSilence: .constant(false), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onInlineMic: {})
 }

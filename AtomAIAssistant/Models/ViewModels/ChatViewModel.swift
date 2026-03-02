@@ -47,6 +47,7 @@ final class ChatViewModel: ObservableObject {
     }
 
     private var answerGenerationModel: LLGenerationModel?
+    @Published var shouldSpeakOnAnswer: Bool = false
 
     init() {
         embeddingClient = AppleEmbeddingClient()
@@ -67,7 +68,6 @@ final class ChatViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] value in
                 self?.isStoppedDueToSilence = value
-                print("Is Stopped due to silence is called \(value)")
             }
             .store(in: &cancellables)
         
@@ -107,8 +107,14 @@ final class ChatViewModel: ObservableObject {
 
     func stopSpeaking() {
         speechRecognizer.stopSpeaking()
+        shouldSpeakOnAnswer = false
     }
 
+    func startListeningAndContinueToSpeak() {
+        speechRecognizer.startRecording(shouldStopOnUserSilence: false)
+        shouldSpeakOnAnswer = true
+    }
+    
     func configureContext(modelContext: ModelContext) {
         qaService = QAService(modelContext: modelContext, embeddingsClient: embeddingClient)
         ragGenerationModel.configureContext(context: modelContext)
@@ -157,7 +163,9 @@ final class ChatViewModel: ObservableObject {
 
     func answer(for query: String) async {
         messages.append(.init(role: .user, text: query))
-        stopListening()
+        if !shouldSpeakOnAnswer {
+            stopListening()
+        }
         isAnswering = true
         if let launchCommand = LaunchApplicationsWithCommand.parseLaunchCommand(query) {
             messages.append(.init(role: .system, text: launchCommand.message))
@@ -177,6 +185,10 @@ final class ChatViewModel: ObservableObject {
                     let askResponse = try await answerWithAPI(question: query, sessionId: sessionID.uuidString)
                     messages.append(.init(role: .assistant, text: askResponse.answer, source: askResponse.sources))
                     isAnswering = false
+                    if shouldSpeakOnAnswer {
+                        startSpeaking(text: "\(askResponse.answer)")
+                        speechRecognizer.transcript = ""
+                    }
                 } catch {
                     messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
                     isAnswering = false
