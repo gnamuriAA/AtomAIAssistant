@@ -7,22 +7,34 @@
 
 import SwiftUI
 
-struct ChatInputComposerView: View {
+public struct ChatInputComposerView: View {
     enum TrailingMode {
         case compact, expanded, recording
     }
     
-    var placeholder: String = "Ask anything"
-    var showAvatarInExpanded = false
+    private var placeholder: String = "Ask anything"
+    private var showAvatarInExpanded = false
     
+    @Binding var text: String
     var onSendText: ((String) -> Void)
     var onTapPlus: () -> Void
     var onStartVoice: () -> Void
     var onStopVoice: () -> Void
     var onSendVoice: () -> Void
     var onInlineMic: () -> Void
-    
-    @State private var text: String = ""
+    @State private var phase: CGFloat = 0.0
+    @State private var animateWave: Bool = false
+
+    public init(text: Binding<String>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopVoice: @escaping () -> Void, onSendVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
+        self._text = text
+        self.onSendText = onSendText
+        self.onTapPlus = onTapPlus
+        self.onStartVoice = onStartVoice
+        self.onStopVoice = onStopVoice
+        self.onSendVoice = onSendVoice
+        self.onInlineMic = onInlineMic
+    }
+
     @FocusState private var isFocused: Bool
     @State private var mode: TrailingMode = .compact
     
@@ -32,11 +44,10 @@ struct ChatInputComposerView: View {
     private let barHeight: CGFloat = 56
     private let pillRadius: CGFloat = 22
     
-    var body: some View {
+    public var body: some View {
         VStack(spacing: 14) {
-            // Avatar in expanded mode (like your 2nd screenshot)
             if showAvatarInExpanded, mode == .expanded {
-                Image("assistantAvatar") // replace with your asset name
+                Image("assistantAvatar")
                     .resizable()
                     .scaledToFill()
                     .frame(width: 64, height: 64)
@@ -71,7 +82,6 @@ private extension ChatInputComposerView {
                 onTapPlus()
             }
             
-            // Center: pill field with inline mic
             HStack(spacing: 10) {
                 TextField(placeholder, text: $text, axis: .vertical)
                     .textFieldStyle(.plain)
@@ -120,9 +130,9 @@ private extension ChatInputComposerView {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .shadow(color: .black.opacity(0.06), radius: 10, y: 2)
-        .onChange(of: isFocused) { isFocused in
+        .onChange(of: isFocused) { oldValue, newValue in
             // Optional: if focusing the text should collapse expanded
-            if isFocused, mode == .expanded {
+            if newValue, mode == .expanded {
                 withAnimation { mode = .compact }
             }
         }
@@ -132,8 +142,9 @@ private extension ChatInputComposerView {
             Group {
                 switch mode {
                 case .compact:
-                    CircleButton(symbol: text.isEmpty ? "waveform" : "paperplane.fill", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 44) {
+                    CircleButton(symbol: text.isEmpty ? "waveform" : "arrow.up", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 44) {
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        onStartVoice()
                         if text.isEmpty {
                             withAnimation { mode = .expanded }
                         } else {
@@ -156,21 +167,34 @@ private extension ChatInputComposerView {
             CircleButton(symbol: "stop.fill", fg: AnyShapeStyle(Color.black), bg: AnyShapeStyle(.ultraThinMaterial), size: 44) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation { mode = .compact }
-//                onStopVoice()
-//                stopMeter()
+                onStopVoice()
                 // TODO: - Stop button action when inline mic is turned on and this will not read out the received messages.
             }
             
-            LevelMeterPill(level: simulatedLevel)
+            LevelMeterPill(isAnimating: $animateWave)
                 .frame(maxWidth: .infinity)
+                .animation(.easeInOut, value: simulatedLevel)
+                .onAppear {
+                    Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { _ in
+                        phase -= 0.01 // Move wave to the left
+                    }
+                }
+                .onChange(of: text) { oldValue, newValue in
+                    animateWave = !newValue.isEmpty
+                    if animateWave {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            animateWave = false
+                        }
+                    }
+                }
             
-            CircleButton(symbol: "arrow.up", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.ultraThinMaterial), size: 44) {
+            CircleButton(symbol: "arrow.up", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 44) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation { mode = .compact }
-//                onSendVoice()
-//                stopMeter()
                 // TODO: - Decide to upload the image or show error when there is no text from the voice given by the user.
             }
+            .disabled(text.isEmpty)
+            .opacity(text.isEmpty ? 0.5 : 1.0)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -184,7 +208,7 @@ private extension ChatInputComposerView {
             CircleButton(symbol: "mic.fill", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 40) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 // TODO: - This should be muting the from user side
-//                onStartVoice()
+                onStartVoice()
             }
             CircleButton(symbol: "xmark", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 40) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -196,12 +220,6 @@ private extension ChatInputComposerView {
 
     func enterRecording() {
         withAnimation { mode = .recording }
-//        if usingRealMicLevels {
-//            try? micMonitor.start()  // ensure NSMicrophoneUsageDescription is in Info.plist
-//        } else {
-//            startSimulatedMeter()
-//        }
-        onStartVoice()
     }
 
     private func sendIfNeeded() {
@@ -242,5 +260,5 @@ fileprivate struct CircleButton: View {
 }
 
 #Preview {
-    ChatInputComposerView(onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
+    ChatInputComposerView(text: .constant(""), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onSendVoice: {}, onInlineMic: {})
 }

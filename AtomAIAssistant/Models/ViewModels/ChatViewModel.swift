@@ -54,7 +54,17 @@ final class ChatViewModel: ObservableObject {
         embeddingClient = AppleEmbeddingClient()
         apiClient = AtomAIAssistantClient()
         quickQuestionsModel = QuickQuestionModel()
-
+        
+        speechRecognizer.$transcript
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                guard !value.isEmpty else {
+                    return
+                }
+                self?.input = value
+            }
+            .store(in: &cancellables)
+        
         monitor.$isConnected
             .combineLatest(monitor.$interfaceType)
             .receive(on: DispatchQueue.main)
@@ -64,7 +74,7 @@ final class ChatViewModel: ObservableObject {
                 self.currentInterface = iface
                 quickQuestionsModel.isOnline = isConnected
                 quickQuestions = quickQuestionsModel.questions
-
+                
                 if isConnected {
                     let ifaceName = iface.map(String.init(describing:)) ?? "network"
                     self.statusText = "Connected via \(ifaceName)"

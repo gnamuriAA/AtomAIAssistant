@@ -20,7 +20,26 @@ struct ChatHolderView: View {
             
             Divider()
             
-            composer
+            ChatInputComposerView(text: $viewModel.input) { textToSend in
+                // TODO: - On send button triggred
+                print("on Text to send \(textToSend)")
+            } onTapPlus: {
+                viewModel.showImporter = true
+            } onStartVoice: {
+                // TODO: - On start voice recording
+                print("on Start voice button click ")
+            } onStopVoice: {
+                // TODO: - On Stop voice recording
+                print("on Stop voice button click ")
+            } onSendVoice: {
+                // TODO: - On send voice recording
+                print("on Send voice button click ")
+            } onInlineMic: {
+                //TODO: - On inline mic button tapped
+                print("On inline Mic clicked ")
+                viewModel.startListening()
+            }
+
         }
         .fileImporter(isPresented: $viewModel.showImporter, allowedContentTypes: [.pdf], allowsMultipleSelection: false) { result in
             Task { @MainActor in
