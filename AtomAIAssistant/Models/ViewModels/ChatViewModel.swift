@@ -55,6 +55,7 @@ final class ChatViewModel: ObservableObject {
 
     private var answerGenerationModel: LLGenerationModel?
     @Published var shouldSpeakOnAnswer: Bool = false
+    private let audioModel = TextToSpeechAudioModel()
 
     init() {
         embeddingClient = AppleEmbeddingClient()
@@ -225,6 +226,10 @@ final class ChatViewModel: ObservableObject {
                 } catch {
                     messages.append(.init(role: .system, text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)"))
                     isAnswering = false
+                    if shouldSpeakOnAnswer {
+                        startSpeaking(text: "Failed to get answer from API. Please try again later. \(error.localizedDescription)")
+                        speechRecognizer?.transcript = ""
+                    }
                 }
             } else {
                 let response = await answerGenerationModel?.answerFromLocal(for: query, history: messages.map { $0.toChatTurn() }) ?? ""
