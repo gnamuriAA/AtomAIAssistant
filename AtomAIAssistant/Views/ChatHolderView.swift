@@ -52,7 +52,7 @@ struct ChatHolderView: View {
     private var chatList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(spacing: 4) {
+                VStack(spacing: 4) {
                     ForEach(viewModel.messages) { message in
                         ChatBubble(viewModel: viewModel, message: message)
                             .id(message.id)
