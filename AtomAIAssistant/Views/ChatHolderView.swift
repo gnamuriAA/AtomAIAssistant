@@ -16,9 +16,25 @@ struct ChatHolderView: View {
     
     var body: some View {
         VStack(spacing: .zero) {
-            chatList
+            if viewModel.messages.isEmpty {
+                ChatInitialView(chatViewModel: viewModel) { askedQuestion in
+                    viewModel.input = askedQuestion
+                    send()
+                }
+            } else {
+                chatList
+            }
             
             Divider()
+
+            if !viewModel.messages.isEmpty {
+                QuickQuestions(viewModel: viewModel, axis: .horizontal) { askedQuestion in
+                    viewModel.input = askedQuestion
+                    send()
+                }
+                .padding([.top, .leading], 8)
+                .padding(.bottom, 12)
+            }
             
             ChatInputComposerView(text: $viewModel.input, isStoppedDueToSilence: $viewModel.isStoppedDueToSilence) { textToSend in
                 send()
@@ -91,22 +107,6 @@ struct ChatHolderView: View {
             sendIsFocused = false
         }
     }
-
-    private var quickQuestions: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(viewModel.quickQuestions) { question in
-                    QuickQuestionView(question: question, isDisabled: $viewModel.isUploading) { question in
-                        viewModel.input = question
-                        send()
-                    }
-                }
-            }
-            .padding(.vertical, 6)
-            .padding(.leading, 6)
-        }
-        .disabled(viewModel.isAnswering)
-    }
     
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         withAnimation(.easeOut(duration: 0.25)) {
@@ -128,4 +128,38 @@ struct ChatHolderView: View {
 
 #Preview {
     ChatHolderView(viewModel: ChatViewModel(), embedProgress: GlobalEmbeddingProgressViewModel())
+}
+
+struct QuickQuestions: View {
+    @ObservedObject var viewModel: ChatViewModel
+    var axis: Axis.Set = .vertical
+    var action: (String) -> Void
+
+    var body: some View {
+        ScrollView(axis, showsIndicators: false) {
+            stackContent(isHStack: axis == .horizontal) {
+                ForEach(viewModel.quickQuestions) { question in
+                    QuickQuestionView(question: question, isDisabled: $viewModel.isUploading) { question in
+                        action(question)
+                    }
+                }
+            }
+        }
+        .disabled(viewModel.isAnswering)
+    }
+
+    @ViewBuilder
+    func stackContent(isHStack: Bool, @ViewBuilder content: () -> some View) -> some View {
+        if isHStack {
+            HStack(spacing: 12) {
+                content()
+            }
+        } else {
+            VStack(spacing: 12) {
+                content()
+            }
+            .padding(.vertical, 6)
+            .padding(.leading, 6)
+        }
+    }
 }

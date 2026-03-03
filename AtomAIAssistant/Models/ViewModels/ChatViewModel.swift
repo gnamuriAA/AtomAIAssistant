@@ -17,9 +17,7 @@ final class ChatViewModel: ObservableObject {
     private(set) var qaService: QAService?
     private var modelContext: ModelContext?
     private let embeddingClient: EmbeddingProvider
-    @Published var messages: [ChatMessage] = [
-        .init(role: .assistant, text: "Ask me anything about the uploaded documents!")
-    ]
+    @Published var messages: [ChatMessage] = []
     @Published var hasUpdatedQAService: Bool = false
     @Published var showImporter = false
     @Published var selectedPDF: URL?
