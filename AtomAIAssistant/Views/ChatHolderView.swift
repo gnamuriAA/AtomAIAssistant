@@ -36,11 +36,14 @@ struct ChatHolderView: View {
                 .padding(.bottom, 12)
             }
             
-            ChatInputComposerView(text: $viewModel.input, isStoppedDueToSilence: $viewModel.isStoppedDueToSilence) { textToSend in
+            ChatInputComposerView(text: $viewModel.input, isStoppedDueToSilence: $viewModel.isStoppedDueToSilence, isSpeaking: $viewModel.isSpeaking) { textToSend in
                 send()
             } onTapPlus: {
                 viewModel.showImporter = true
             } onStartVoice: {
+                viewModel.startListeningAndContinueToSpeak()
+            } onStopSpeaking: {
+                viewModel.stopSpeaking()
                 viewModel.startListeningAndContinueToSpeak()
             } onStopVoice: {
                 viewModel.stopListening()

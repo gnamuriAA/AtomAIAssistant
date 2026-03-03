@@ -17,15 +17,27 @@ public struct ChatInputComposerView: View {
     
     @Binding var text: String
     @Binding var isStoppedDueToSilence: Bool
+    @Binding var isSpeaking: Bool
     var onSendText: ((String) -> Void)
     var onTapPlus: () -> Void
     var onStartVoice: () -> Void
+    var onStopSpeaking: () -> Void
     var onStopVoice: () -> Void
     var onInlineMic: () -> Void
     @State private var phase: CGFloat = 0.0
     @State private var animateWave: Bool = false
 
-    public init(text: Binding<String>, isStoppedDueToSilence: Binding<Bool>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
+    private var shouldDisableSpeakerButton: Bool {
+        if mode == .expanded {
+            if isSpeaking {
+                return false
+            }
+            return true
+        }
+        return false
+    }
+
+    public init(text: Binding<String>, isStoppedDueToSilence: Binding<Bool>, isSpeaking: Binding<Bool>, onSendText: @escaping (String) -> Void, onTapPlus: @escaping () -> Void, onStartVoice: @escaping () -> Void, onStopSpeaking: @escaping () -> Void, onStopVoice: @escaping () -> Void, onInlineMic: @escaping () -> Void) {
         self._text = text
         self._isStoppedDueToSilence = isStoppedDueToSilence
         self.onSendText = onSendText
@@ -33,6 +45,8 @@ public struct ChatInputComposerView: View {
         self.onStartVoice = onStartVoice
         self.onStopVoice = onStopVoice
         self.onInlineMic = onInlineMic
+        self.onStopSpeaking = onStopSpeaking
+        self._isSpeaking = isSpeaking
     }
 
     @FocusState private var isFocused: Bool
@@ -198,7 +212,6 @@ private extension ChatInputComposerView {
             CircleButton(symbol: "arrow.up", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 44) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation { mode = .compact }
-                // TODO: - Decide to upload the image or show error when there is no text from the voice given by the user.
             }
             .disabled(text.isEmpty)
             .opacity(text.isEmpty ? 0.5 : 1.0)
@@ -212,15 +225,20 @@ private extension ChatInputComposerView {
 
     var expandedControlsRow: some View {
         HStack(spacing: 12) {
-            CircleButton(symbol: "mic.fill", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 40) {
+            CircleButton(symbol: mode == .expanded ? "speaker.slash" : "mic.fill",
+                         fg: AnyShapeStyle(.white),
+                         bg: AnyShapeStyle(.black),
+                         size: 40) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 // TODO: - This should be muting the from user side, if mode is expand then we need to mute
                 if mode == .expanded {
-                    // Mute
+                    onStopSpeaking()
                 } else {
                     onStartVoice()
                 }
             }
+                         .disabled(shouldDisableSpeakerButton)
+            
             CircleButton(symbol: "xmark", fg: AnyShapeStyle(.white), bg: AnyShapeStyle(.black), size: 40) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 withAnimation { mode = .compact }
@@ -273,5 +291,5 @@ fileprivate struct CircleButton: View {
 }
 
 #Preview {
-    ChatInputComposerView(text: .constant(""), isStoppedDueToSilence: .constant(false), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopVoice: {}, onInlineMic: {})
+    ChatInputComposerView(text: .constant(""), isStoppedDueToSilence: .constant(false), isSpeaking: .constant(false), onSendText: {_ in }, onTapPlus: {}, onStartVoice: {}, onStopSpeaking: {}, onStopVoice: {}, onInlineMic: {})
 }

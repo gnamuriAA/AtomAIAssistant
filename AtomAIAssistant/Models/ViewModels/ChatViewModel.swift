@@ -44,12 +44,7 @@ final class ChatViewModel: ObservableObject {
         return speechRecognizer.isListening
     }
     @Published var isStoppedDueToSilence: Bool = false
-    var isSpeaking: Bool {
-        guard let speechRecognizer else {
-            return false
-        }
-        return speechRecognizer.isSpeaking
-    }
+    @Published var isSpeaking: Bool = false
 
     private var answerGenerationModel: LLGenerationModel?
     @Published var shouldSpeakOnAnswer: Bool = false
@@ -139,6 +134,13 @@ final class ChatViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] value in
                 self?.isStoppedDueToSilence = value
+            }
+            .store(in: &speechCancellables)
+
+        speechRecognizer.$isSpeaking
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] value in
+                self?.isSpeaking = value
             }
             .store(in: &speechCancellables)
     }
