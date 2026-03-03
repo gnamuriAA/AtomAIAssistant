@@ -405,6 +405,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = ZGE7Q5M697;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "ATOM Assistant";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We will be using micropone to convert speech to text. And readout the messages to the user.";
 				INFOPLIST_KEY_NSSiriUsageDescription = "This app uses Siri to let you interact with your messages using your voice.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -417,10 +418,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.aa.techopsmobility.atom.aiAssistant;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aa.techopsmobility.atomassistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "ATOM Wildcard Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "ATOM Assistant Dev";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -444,6 +445,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = ZGE7Q5M697;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "ATOM Assistant";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We will be using micropone to convert speech to text. And readout the messages to the user.";
 				INFOPLIST_KEY_NSSiriUsageDescription = "This app uses Siri to let you interact with your messages using your voice.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -456,10 +458,10 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.aa.techopsmobility.atom.aiAssistant;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aa.techopsmobility.atomassistant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "ATOM Wildcard Development";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "ATOM Assistant Dev";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
