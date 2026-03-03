@@ -25,16 +25,15 @@ struct ChatHolderView: View {
                 chatList
             }
             
-            Divider()
-
-            if !viewModel.messages.isEmpty {
-                QuickQuestions(viewModel: viewModel, axis: .horizontal) { askedQuestion in
-                    viewModel.input = askedQuestion
-                    send()
-                }
-                .padding([.top, .leading], 8)
-                .padding(.bottom, 12)
-            }
+            // Hiding this as of now
+//            if !viewModel.messages.isEmpty {
+//                QuickQuestions(viewModel: viewModel, axis: .horizontal) { askedQuestion in
+//                    viewModel.input = askedQuestion
+//                    send()
+//                }
+//                .padding([.top, .leading], 8)
+//                .padding(.bottom, 12)
+//            }
             
             ChatInputComposerView(text: $viewModel.input, isStoppedDueToSilence: $viewModel.isStoppedDueToSilence, isSpeaking: $viewModel.isSpeaking) { textToSend in
                 send()

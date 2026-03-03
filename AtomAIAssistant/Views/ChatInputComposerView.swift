@@ -13,7 +13,7 @@ public struct ChatInputComposerView: View {
     }
     
     private var placeholder: String = "Ask anything"
-    private var showAvatarInExpanded = false
+    private var showAvatarInExpanded = true
     
     @Binding var text: String
     @Binding var isStoppedDueToSilence: Bool
@@ -54,12 +54,13 @@ public struct ChatInputComposerView: View {
     
     @State private var usingRealMicLevel = true
     @State private var simulatedLevel: CGFloat = 0.2
+    @State private var isAnimating = false
     
     private let barHeight: CGFloat = 56
     private let pillRadius: CGFloat = 22
     
     public var body: some View {
-        VStack(spacing: 14) {
+        VStack {
             if showAvatarInExpanded, mode == .expanded {
                 Image("assistantAvatar")
                     .resizable()
@@ -68,29 +69,40 @@ public struct ChatInputComposerView: View {
                     .clipShape(Circle())
                     .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
                     .transition(.scale.combined(with: .opacity))
-            }
-            
-            switch mode {
-            case .recording:
-                recordingBar
-            default:
-                mainComposerBar
-            }
-        }
-        .animation(.spring(response: 0.28, dampingFraction: 0.9), value: mode)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-        .onChange(of: isStoppedDueToSilence, { oldValue, newValue in
-            if isStoppedDueToSilence {
-                withAnimation {
-                    if mode == .recording {
-                        mode = .compact
-                    } else {
-                        sendIfNeeded()
+                    .scaleEffect(isAnimating ? 1.0 : 1.2)
+                    .animation(
+                        Animation.linear(duration: 1.2) // speed
+                            .repeatForever(autoreverses: true),
+                        value: isAnimating
+                    )
+                    .onAppear {
+                        isAnimating = true
                     }
+            }
+            VStack(spacing: 14) {
+                Divider()
+                switch mode {
+                case .recording:
+                    recordingBar
+                default:
+                    mainComposerBar
                 }
             }
-        })
+            .animation(.spring(response: 0.28, dampingFraction: 0.9), value: mode)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
+            .onChange(of: isStoppedDueToSilence, { oldValue, newValue in
+                if isStoppedDueToSilence {
+                    withAnimation {
+                        if mode == .recording {
+                            mode = .compact
+                        } else {
+                            sendIfNeeded()
+                        }
+                    }
+                }
+            })
+        }
     }
 }
 
